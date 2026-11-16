@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Prihlásenie{% endblock %}
+{% block content %}
+<div class="login-grid">
+  <section class="login-story">
+    <p class="eyebrow">PRIESTOR PRE VÁŠ POHYB</p>
+    <h1>Váš tréning.<br>Váš čas.<br><em>Vaše miesto.</em></h1>
+    <p class="lead">Vyberte si tréning, rezervujte si miesto a venujte čas tomu, na čom záleží.</p>
+    <div class="movement-art" aria-hidden="true"><span class="orbit orbit-one"></span><span class="orbit orbit-two"></span><span class="orbit orbit-three"></span><span class="art-label">NÁJDITE SVOJ RYTMUS</span></div>
+  </section>
+  <section class="login-panel" aria-labelledby="login-title">
+    <span class="pill">VITAJTE SPÄŤ</span>
+    <h2 id="login-title">Prihlásenie</h2>
+    <p>Váš rozvrh aj rezervácie na jednom mieste.</p>
+    <form id="login-form">
+      <label for="username">Používateľské meno</label>
+      <input id="username" name="username" autocomplete="username" maxlength="80" placeholder="napr. anna" required>
+      <label for="password">Heslo</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" maxlength="256" required>
+      <button id="login-submit" class="button button-primary" type="submit" disabled>Načítavam…</button>
+    </form>
+    <div class="demo-note"><strong>Vyskúšajte ukážku</strong><p>Účty: <code>anna</code>, <code>boris</code>, <code>cyril</code>, <code>dana</code>, <code>trener</code><br>Spoločné heslo: <code>Demo123!</code></p><small>Anna a Boris majú aktívne členstvo. Cyril má expirované členstvo, Dana čakajúce. Účet trénera ukáže prístupové obmedzenia.</small></div>
+  </section>
+</div>
+{% endblock %}

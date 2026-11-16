@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Moje rezervácie{% endblock %}
+{% block content %}
+<section class="page-heading"><div><p class="eyebrow">VÁŠ OSOBNÝ ROZVRH</p><h1>Moje <em>rezervácie.</em></h1><p>Miesta, ktoré na vás čakajú. Aj prehľad vašej histórie.</p></div><a class="button button-outline" href="/schedule">Vybrať ďalší tréning ↗</a></section>
+<div class="toolbar"><p class="muted">Budúcu rezerváciu môžete zrušiť aj po skončení členstva.</p><button id="refresh" class="button button-outline">Obnoviť údaje</button></div>
+<section id="reservations" class="reservation-list" aria-label="Vaše rezervácie" aria-busy="true"><p class="empty">Načítavam rezervácie…</p></section>
+{% endblock %}

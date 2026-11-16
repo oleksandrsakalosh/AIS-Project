@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173d32">
+  <title>{% block title %}Rezervácie{% endblock %} · Pohyb</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script type="module" src="/static/app.js"></script>
+</head>
+<body data-page="{{ page }}">
+  <a class="skip" href="#main">Preskočiť na obsah</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="/schedule" aria-label="Pohyb, športové centrum"><span class="brand-mark" aria-hidden="true">p.</span><span>pohyb<span class="brand-sub">ŠPORTOVÉ CENTRUM</span></span></a>
+      {% if user %}
+      <nav aria-label="Hlavná navigácia">
+        <a href="/schedule" {% if page == 'schedule' %}aria-current="page"{% endif %}>Rozvrh</a>
+        {% if user.role == 'client' %}<a href="/my-reservations" {% if page == 'reservations' %}aria-current="page"{% endif %}>Moje rezervácie</a>{% endif %}
+      </nav>
+      <div class="account"><span class="account-name">{{ user.username }}<small>{{ 'Klient' if user.role == 'client' else 'Tréner' }}</small></span><button id="logout" class="button button-quiet">Odhlásiť sa</button></div>
+      {% else %}<span class="header-note">Viac pohybu. Menej vybavovania.</span>{% endif %}
+    </div>
+  </header>
+  <main id="main" class="container">
+    <div id="message" class="message" role="status" aria-live="polite" hidden></div>
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="container footer"><span>Pohyb začína jednou rezerváciou.</span><span>Lokálna ukážka · Fiktívne údaje</span></footer>
+</body>
+</html>

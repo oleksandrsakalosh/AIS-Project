@@ -2,7 +2,7 @@
 
 ## Context
 
-This folder belongs to the sports-centre information system documented in `../docs/` and `../diagrams/`. It is not the zkDAPP Survey Frontend project. Do not introduce Expo, Vocdoni, wallets, SD-JWT, or zero-knowledge tooling.
+This folder belongs to the sports-centre information system documented in `../docs/` and `../diagrams/`.
 
 Read `spec/manifest.yaml`, then `spec/prototype.md`, and the relevant referenced project material before implementation. Manifest source paths are relative to the parent AIS workspace root; application paths are relative to this folder.
 

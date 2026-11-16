@@ -1,0 +1,46 @@
+PRAGMA foreign_keys=ON;
+CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('client','trainer'))
+);
+CREATE TABLE memberships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id),
+    kind TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('active','pending','expired')),
+    valid_from TEXT NOT NULL,
+    valid_until TEXT NOT NULL CHECK (valid_until > valid_from)
+);
+CREATE TABLE activities (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE trainers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE rooms (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE trainings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    activity_id INTEGER NOT NULL REFERENCES activities(id),
+    trainer_id INTEGER NOT NULL REFERENCES trainers(id),
+    room_id INTEGER NOT NULL REFERENCES rooms(id),
+    starts_at TEXT NOT NULL,
+    ends_at TEXT NOT NULL CHECK (ends_at > starts_at),
+    capacity INTEGER NOT NULL CHECK (capacity > 0)
+);
+CREATE TABLE reservations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    training_id INTEGER NOT NULL REFERENCES trainings(id),
+    status TEXT NOT NULL CHECK (status IN ('confirmed','cancelled')),
+    created_at TEXT NOT NULL,
+    cancelled_at TEXT,
+    CHECK ((status='confirmed' AND cancelled_at IS NULL) OR (status='cancelled' AND cancelled_at IS NOT NULL))
+);
+CREATE UNIQUE INDEX one_confirmed_booking ON reservations(user_id,training_id) WHERE status='confirmed';
+CREATE INDEX confirmed_occupancy ON reservations(training_id,status);
+CREATE TABLE sessions (
+    token_hash TEXT PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    csrf_hash TEXT NOT NULL,
+    csrf_token TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);

@@ -6,9 +6,9 @@ Use these in order. Start with the AIS workspace as the working folder. Read and
 
 ```text
 Mode: PREPARE_SPEC
-Project: Sports-centre information system, not zkDAPP Survey Frontend
+Project: Sports-centre information system
 Change: POC-BOOKING, primarily R-02 with membership/capacity/access dependencies
-Specification: prototype/spec/prototype.md v0.1.0 (draft)
+Specification: prototype/spec/prototype.md v0.1.1 (approved prototype baseline)
 
 Read prototype/AGENTS.md, prototype/spec/manifest.yaml, and
 prototype/spec/prototype.md. Follow the manifest's source paths from the AIS
@@ -39,10 +39,10 @@ Sending this prompt after review is a user decision. It does not assert that the
 
 ```text
 Mode: IMPLEMENT_CHANGE
-Project: Sports-centre information system, not zkDAPP Survey Frontend
+Project: Sports-centre information system
 Change: POC-BOOKING
-Specification: prototype/spec/prototype.md v0.1.0
-Contract: POC-BOOKING-API v0.1.0 in section 6 of that specification
+Specification: prototype/spec/prototype.md v0.1.1
+Contract: POC-BOOKING-API v0.1.1 in section 6 of that specification
 
 I have reviewed and approve this prototype specification and contract for the local
 proof of concept, including its explicitly proposed decisions DEC-P01 through

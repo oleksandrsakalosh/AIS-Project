@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Rozvrh tréningov{% endblock %}
+{% block content %}
+<section class="page-heading"><div><p class="eyebrow">NÁJDITE SVOJ RYTMUS</p><h1>Čas na <em>pohyb.</em></h1><p>Vyberte si tréning. My vám podržíme miesto.</p></div><div class="heading-note">Všetky časy sú uvedené<br>pre Slovensko.</div></section>
+<div class="toolbar"><div id="membership" class="membership">Načítavam členstvo…</div><button id="refresh" class="button button-outline">Obnoviť údaje</button></div>
+<div class="section-heading"><h2>Najbližšie tréningy</h2><span id="training-count" class="muted"></span></div>
+<section id="trainings" class="cards" aria-label="Najbližšie tréningy" aria-busy="true"><p class="empty">Načítavam rozvrh…</p></section>
+<section id="past-section" hidden><div class="section-heading"><h2>Minulé tréningy</h2><span class="muted">Rezervácia už nie je možná</span></div><div id="past-trainings" class="cards"></div></section>
+{% endblock %}
