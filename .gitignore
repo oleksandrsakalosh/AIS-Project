@@ -180,6 +180,13 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-diagrams/
-docs/
-/course_resources
+# Ignore resource files except .zip archives (including nested folders).
+/diagrams/**
+!/diagrams/**/
+!/diagrams/**/*.zip
+/docs/**
+!/docs/**/
+!/docs/**/*.zip
+/course_resources/**
+!/course_resources/**/
+!/course_resources/**/*.zip
