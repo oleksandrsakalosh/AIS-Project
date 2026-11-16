@@ -1,0 +1,58 @@
+specification:
+  id: "POC-BOOKING"
+  version: "0.1.0"
+  status: "draft"
+  selected_scope: "Booking demo selected by the user on 2026-11-16"
+  approved_by: null
+  approval_evidence: null
+  architecture_baseline: "Existing supplied exports; no verified EA baseline label supplied"
+  workflow: "Compact student SDD adaptation; not full v4-template compliance"
+
+paths:
+  source_paths_relative_to: "AIS workspace root (parent of prototype/)"
+  implementation_root: "prototype/"
+  instructions: "prototype/AGENTS.md"
+  specification: "prototype/spec/prototype.md"
+  handoff: "prototype/README.md"
+  prompts: "prototype/CODEX_PROMPTS.md"
+
+contract:
+  id: "POC-BOOKING-API"
+  version: "0.1.0"
+  status: "proposed"
+  location: "prototype/spec/prototype.md#6-proposed-api-contract"
+
+project_sources:
+  - path: "docs/Informačný_systém_pre_správu_športového_centra.pdf"
+    use: "pp. 2, 5, 11-19: scope, services, responsibilities, R-02, C-39/C-60, I-01/I-05/I-06, C-01"
+  - path: "docs/GAP_Analysis_IS_sportoveho_centra.pdf"
+    use: "pp. 5-6: Gap A booking scope and later Gap B payment/notification/mobile work"
+
+architecture_views:
+  review_status: "Available and inspected during preparation; human confirmation against the current EA model is not recorded"
+  files:
+    - "diagrams/PNG/01_Application_Cooperation_Viewpoint.png"
+    - "diagrams/PNG/02_Application_Structure_Viewpoint.png"
+    - "diagrams/PNG/03_Application_Usage_Viewpoint.png"
+    - "diagrams/PNG/08_Information_Structure_Viewpoint.png"
+    - "diagrams/PNG/11_Layered_Viewpoint.png"
+    - "diagrams/PNG/17_Service_Realization_Viewpoint.png"
+    - "diagrams/PNG/20_Technology_Usage_Viewpoint.png"
+
+method_references:
+  - "course_resources/SDD_framework_pre_studentov_v4.pdf"
+  - "course_resources/SDD_AI_RULES_v4.pdf"
+  - "course_resources/SDD_PROJECT_TEMPLATE_v4.pdf"
+
+excluded_as_implementation_authority:
+  - "FPA and COCOMO: planning estimates, not a feature backlog or code-line target"
+  - "Gantt: planning context, not an API or business-rule specification"
+  - "Unrelated examples and sample approvals inside the teacher PDFs"
+
+implementation_outputs:
+  - "prototype/app/"
+  - "prototype/tests/"
+  - "prototype/requirements.txt"
+  - "prototype/README.md (extend the handoff with actual setup and run instructions)"
+  - "prototype/DEMO.md"
+  - "prototype/reports/validation.md"
