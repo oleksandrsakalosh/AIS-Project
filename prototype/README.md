@@ -8,6 +8,8 @@ Working local proof of concept for **POC-BOOKING specification v0.1.1** and **PO
 
 **INC-03** adds **Katalóg** to the administrator’s staff portal. Manage trainers, activities and rooms there. Use **Prepojenie účtu** on a trainer record to link an active Trainer login explicitly. Future classes protect their catalog references and existing trainer links. Catalog renames appear on the schedule and in reservation history. [Approved INC-03 contract](spec/drafts/increment-03-catalog-administration-http-v0.1.0.md) · [INC-03 validation](reports/validation-inc-03.md)
 
+**INC-04** adds **Moje tréningy** for linked trainers. Create an individual future session, set its capacity, and edit its details until the first reservation. After that, future sessions allow capacity edits at or above confirmed occupancy. Publish and edit directly in the shared schedule. [Approved INC-04 contract](spec/drafts/increment-04-trainer-scheduling-http-v0.1.0.md) · [INC-04 validation](reports/validation-inc-04.md)
+
 ## Spustenie vo Windows PowerShell
 
 Tested with **Python 3.13.7** on Windows and the exact resolved package versions in `requirements.txt`. Python 3.13 is recommended for reproducing this tested environment. No Node build, database server, cloud account or API key is required. Use a browser with JavaScript enabled.
@@ -36,13 +38,13 @@ The seeded accounts below use **`Demo123!`**. For staff administration, run `app
 | `boris` | Client; active membership; owns the seeded bookings in trainings 1 and 3. |
 | `cyril` | Client; expired membership; can cancel his earlier booking in training 5. |
 | `dana` | Client; pending membership; cannot book. |
-| `trener` | Trainer; schedule read access and staff notice; no client operations. |
+| `trener` | Trainer; shared schedule read access. An administrator can link the login to Marek Novák to enable **Moje tréningy**. |
 
 ### Dáta, reštart a reset
 
 The SQLite database is `prototype/runtime/booking.sqlite3`, with WAL sidecar files while running. Runtime files, sessions and `.venv` are ignored by `prototype/.gitignore`; do not commit or share them. Database initialization is explicit: the server never seeds or resets automatically. Repeating `python -m app.seed` preserves existing data and the original saved training dates. Future dates are relative to the original seed timestamp, so reset old demo data before a later presentation.
 
-For an existing database at schema 0.1.1, 0.2.0 or 0.3.0, stop the server and run the explicit upgrade to 0.4.0 from `prototype/`. It preserves accounts, eligible sessions, bookings and catalog references. Existing catalog rows become active, and trainers start unlinked for the administrator to assign explicitly. Fresh initialization uses 0.4.0.
+For an existing database at schema 0.1.1, 0.2.0, 0.3.0 or 0.4.0, stop the server and run the explicit upgrade to 0.5.0 from `prototype/`. It preserves accounts, eligible sessions, bookings, catalog references and existing trainer links. From versions before 0.4.0, catalog rows become active and trainers start unlinked. Existing trainings receive edit version 1. Fresh initialization uses 0.5.0.
 
 ```powershell
 & .\.venv\Scripts\python.exe -m app.migrate
@@ -70,13 +72,13 @@ Run from `prototype/`:
 & .\.venv\Scripts\python.exe -m compileall -q app tests
 ```
 
-The optional JavaScript mutation tests use Node's built-in test runner (no npm packages or frontend build). Node is **not** needed to run the application. The tested Node version and results are recorded in `reports/validation.md`.
+The optional JavaScript tests cover mutation recovery and training time display. They use Node's built-in test runner without npm packages or a frontend build. See the tested Node version and results in the [validation reports](reports/validation.md).
 
 ```powershell
-node --test tests/mutations.test.mjs
+node --test tests/mutations.test.mjs tests/training-times.test.mjs
 ```
 
-See [DEMO.md](DEMO.md) for the Slovak walkthrough and the linked validation reports for results. The live API schema at `/openapi.json` and `/docs` reports version 0.3.0 with the account and catalog admin routes. `spec/openapi.generated.json` records the original 0.1.1 booking API. The versioned contracts govern behavior. [Booking contract](spec/prototype.md#6-approved-api-contract) · [INC-02 contract](spec/drafts/increment-02-account-administration-http-v0.1.0.md) · [INC-03 contract](spec/drafts/increment-03-catalog-administration-http-v0.1.0.md)
+See [DEMO.md](DEMO.md) for the Slovak walkthrough and the linked validation reports for results. The live API schema at `/openapi.json` and `/docs` reports version 0.4.0 and includes the trainer scheduling routes. `spec/openapi.generated.json` records the original 0.1.1 booking API. The versioned contracts govern behavior. [Booking contract](spec/prototype.md#6-approved-api-contract) · [INC-02 contract](spec/drafts/increment-02-account-administration-http-v0.1.0.md) · [INC-03 contract](spec/drafts/increment-03-catalog-administration-http-v0.1.0.md) · [INC-04 contract](spec/drafts/increment-04-trainer-scheduling-http-v0.1.0.md)
 
 ### Implementation notes and limits
 
@@ -85,7 +87,8 @@ See [DEMO.md](DEMO.md) for the Slovak walkthrough and the linked validation repo
 - A write transaction acquires SQLite's `BEGIN IMMEDIATE` lock with a bounded five-second busy/retry window. Membership, training time, duplicate and occupancy checks share that transaction. Time is refreshed after waits/retries and immediately before the write; a partial unique index additionally protects confirmed duplicates.
 - Booking POSTs are never automatically retried. An uncertain result reloads authoritative reservations and availability; failed reconciliation disables further booking until a successful refresh. After cancellation, a delayed old POST may create a new booking: this accepted limitation is not a generic idempotency system.
 - Only confirmed bookings consume seats. Cancellation keeps history; rebooking uses a new ID, and old DELETE requests cannot cancel it. Past records do not automatically transition to completed.
-- Memberships and training times are fixtures. Administrators manage staff accounts, catalog entries and trainer links. An inactive catalog entry remains readable on existing trainings and bookings. Catalog reactivation is deferred and scheduling writes belong to INC-04. The browser uses loopback HTTP sessions.
+- Memberships and the initial training times are seeded. Trainers publish and edit their own future sessions through an effective catalog link. Administrators manage staff accounts, catalog entries and trainer links. Inactive catalog entries remain readable on existing trainings and bookings. The browser uses loopback HTTP sessions.
+- The client refreshes session details before submitting a booking. If the visible details changed, the client must confirm again. An edit can still commit after the refresh and before the booking. The booking uses the latest committed session and the confirmation shows its details.
 
 ## Original compact handoff context
 

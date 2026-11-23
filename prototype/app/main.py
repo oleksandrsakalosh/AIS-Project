@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import accounts, auth, booking, catalog, membership, schedule
+from . import accounts, auth, booking, catalog, membership, schedule, trainer_schedule
 from .db import Database, DEFAULT_DB, utc_now
 from .errors import BusinessError, error_body
 from .models import (BookingInput, LoginInput, TrainingList, MembershipResponse,
@@ -19,7 +19,8 @@ from .models import (BookingInput, LoginInput, TrainingList, MembershipResponse,
                      AccountList, AccountView, AccountRoleUpdate, AccountStatusUpdate,
                      LoginView, SessionView, StaffRegistration, CatalogKind, CatalogList,
                      CatalogEntry, CatalogCreate, CatalogRename, CatalogDeactivate,
-                     TrainerCatalogView, TrainerLinkUpdate)
+                     TrainerCatalogView, TrainerLinkUpdate, TrainingCreate, TrainingEdit,
+                     TrainingEditorItem, TrainerScheduleView)
 
 HERE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
@@ -27,6 +28,8 @@ REGISTRATION = "/api/account/registration"
 PROFILE = "/api/account/profile"
 ADMIN = "/api/admin/accounts"
 CATALOG = "/api/admin/catalog"
+TRAINER_SCHEDULE = "/api/trainer/schedule"
+TRAINER_SCHEDULE_PAGE = "/staff/training-schedule"
 CLIENT_ROUTES = ("/memberships/current", "/reservations", PROFILE)
 ROLE_LABELS = {"client": "Klient", "trainer": "Tréner", "reception": "Recepcia", "admin": "Administrátor"}
 AdminID = Annotated[str, PathField(pattern=r"^[0-9]+$")]
@@ -40,7 +43,7 @@ def admin_id_number(value):
 
 
 def create_app(db_path=None, clock=utc_now):
-    application = FastAPI(title="POC-BOOKING-API", version="0.3.0")
+    application = FastAPI(title="POC-BOOKING-API", version="0.4.0")
     application.state.db = Database(db_path or os.environ.get("POC_DB_PATH", DEFAULT_DB), clock)
     db = application.state.db
     application.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
@@ -48,7 +51,7 @@ def create_app(db_path=None, clock=utc_now):
     def storage_error(request, status, code):
         if request.method == "GET" and request.url.path in (
             "/login", "/register", "/profile", "/schedule", "/my-reservations", "/staff",
-            "/admin/accounts", "/admin/catalog",
+            "/admin/accounts", "/admin/catalog", TRAINER_SCHEDULE_PAGE,
         ):
             return HTMLResponse(
                 '<!doctype html><html lang="sk"><meta charset="utf-8"><title>Údaje sú nedostupné</title>'
@@ -62,6 +65,7 @@ def create_app(db_path=None, clock=utc_now):
     async def access_boundary(request, call_next):
         path, method = request.url.path, request.method
         catalog_route = path == CATALOG or path.startswith(CATALOG + "/")
+        trainer_route = path == TRAINER_SCHEDULE or path.startswith(TRAINER_SCHEDULE + "/")
         admin = catalog_route or path == ADMIN or path.startswith(ADMIN + "/")
         client_only = path in CLIENT_ROUTES or path.startswith("/reservations/")
         protected = admin or client_only or path == "/trainings"
@@ -69,20 +73,24 @@ def create_app(db_path=None, clock=utc_now):
         session_endpoint = path in ("/login", "/logout") and method == "POST"
         request.state.cookie = request.cookies.get(auth.COOKIE)
         try:
-            if protected or session_endpoint or signup:
-                context = auth.current_session(db, request.state.cookie)
+            if trainer_route or protected or session_endpoint or signup:
+                if trainer_route:
+                    with db.transaction() as conn:
+                        context, _, _ = trainer_schedule.access(conn, request.state.cookie, db.clock())
+                else:
+                    context = auth.current_session(db, request.state.cookie)
                 if protected:
                     auth.require_access(context, "admin" if admin else "client" if client_only else None)
                 if signup and auth.user_summary(context) is not None:
                     raise BusinessError(403, "already_signed_in")
                 if method not in ("GET", "HEAD", "OPTIONS"):
                     auth.require_csrf(context, request.headers.get("X-CSRF-Token"))
-                if admin and method in ("POST", "PUT"):
+                if (admin or trainer_route) and method in ("POST", "PUT"):
                     media_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
                     if media_type != "application/json":
                         raise BusinessError(422, "validation")
-                    if catalog_route:
-                        # FastAPI reports undecodable JSON bytes as 400. Catalog writes use 422.
+                    if catalog_route or trainer_route:
+                        # FastAPI reports undecodable JSON bytes as 400. These writes use 422.
                         try:
                             (await request.body()).decode("utf-8")
                         except UnicodeDecodeError as exc:
@@ -106,7 +114,7 @@ def create_app(db_path=None, clock=utc_now):
 
     @application.exception_handler(RequestValidationError)
     async def validation_error(request, exc):
-        if request.url.path in (REGISTRATION, PROFILE) or request.url.path.startswith((ADMIN, CATALOG)):
+        if request.url.path in (REGISTRATION, PROFILE) or request.url.path.startswith((ADMIN, CATALOG, TRAINER_SCHEDULE)):
             # FastAPI's default validation response can include submitted values.
             return JSONResponse(error_body("validation"), status_code=422)
         if request.url.path == "/login":
@@ -209,6 +217,19 @@ def create_app(db_path=None, clock=utc_now):
     def catalog_link(entry_id: AdminID, data: TrainerLinkUpdate, request: Request):
         return catalog.change_trainer_link(db, request.state.cookie, admin_id_number(entry_id), data)
 
+    @application.get(TRAINER_SCHEDULE, response_model=TrainerScheduleView)
+    def trainer_snapshot(request: Request):
+        return trainer_schedule.snapshot(db, request.state.cookie)
+
+    @application.post(TRAINER_SCHEDULE, status_code=201, response_model=TrainingEditorItem)
+    def trainer_create(data: TrainingCreate, request: Request):
+        return trainer_schedule.create(db, request.state.cookie, request.headers.get("X-CSRF-Token"), data)
+
+    @application.put(TRAINER_SCHEDULE + "/{id_treningu}", response_model=TrainingEditorItem)
+    def trainer_edit(id_treningu: AdminID, data: TrainingEdit, request: Request):
+        return trainer_schedule.edit(db, request.state.cookie, request.headers.get("X-CSRF-Token"),
+                                     admin_id_number(id_treningu), data)
+
     @application.get("/trainings", response_model=TrainingList)
     def get_trainings(request: Request):
         with db.transaction() as conn:
@@ -243,9 +264,9 @@ def create_app(db_path=None, clock=utc_now):
             return RedirectResponse("/login", status_code=303)
         if audience == "client" and user["role"] != "client":
             return RedirectResponse("/staff", status_code=303)
-        if audience in ("staff", "admin") and user["role"] == "client":
+        if audience in ("staff", "admin", "trainer") and user["role"] == "client":
             return RedirectResponse("/schedule", status_code=303)
-        if audience == "admin" and user["role"] != "admin":
+        if audience in ("admin", "trainer") and user["role"] != audience:
             return RedirectResponse("/staff", status_code=303)
         return templates.TemplateResponse(request=request, name=name + ".html",
                                           context={"user": user, "page": name, "role_labels": ROLE_LABELS})
@@ -281,6 +302,10 @@ def create_app(db_path=None, clock=utc_now):
     @application.get("/staff", include_in_schema=False)
     def staff_page(request: Request):
         return page(request, "staff", "staff")
+
+    @application.get(TRAINER_SCHEDULE_PAGE, include_in_schema=False)
+    def trainer_schedule_page(request: Request):
+        return page(request, "trainer-schedule", "trainer")
 
     @application.get("/admin/accounts", include_in_schema=False)
     def admin_page(request: Request):

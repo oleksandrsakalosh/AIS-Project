@@ -52,7 +52,19 @@ CREATE TABLE trainings (
     room_id INTEGER NOT NULL REFERENCES rooms(id),
     starts_at TEXT NOT NULL,
     ends_at TEXT NOT NULL CHECK (ends_at > starts_at),
-    capacity INTEGER NOT NULL CHECK (capacity > 0)
+    capacity INTEGER NOT NULL CHECK (capacity > 0),
+    version INTEGER NOT NULL DEFAULT 1 CHECK (version BETWEEN 1 AND 9007199254740991)
+);
+CREATE INDEX training_by_trainer ON trainings(trainer_id);
+CREATE INDEX training_by_room ON trainings(room_id);
+CREATE TABLE training_creates (
+    account_id INTEGER NOT NULL REFERENCES users(id),
+    request_id TEXT NOT NULL,
+    trainer_id INTEGER NOT NULL REFERENCES trainers(id),
+    training_id INTEGER NOT NULL REFERENCES trainings(id),
+    fields TEXT NOT NULL,
+    response TEXT NOT NULL,
+    PRIMARY KEY (account_id, request_id)
 );
 CREATE TABLE reservations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

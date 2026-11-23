@@ -23,7 +23,7 @@ Otvorte http://127.0.0.1:8000. Heslo predpripravených účtov je `Demo123!`. Re
 | 2:00–2:40 | Zrušte rezerváciu, potom sa vráťte do rozvrhu. | Záznam zostane ako **ZRUŠENÁ**; počet voľných miest sa vráti na 2. Nová rezervácia dostane nové číslo. |
 | 2:40–3:20 | Pozrite plný Kruhový tréning a sekciu **Minulé tréningy**. Odhláste sa; prihláste sa ako `dana`. | Plný a minulý tréning sa nedajú rezervovať. Dana vidí čakajúce členstvo a nemôže vytvoriť rezerváciu. |
 | 3:20–4:10 | Prihláste sa ako `cyril`, otvorte **Moje rezervácie** a zrušte Zdravý chrbát. | Aj s expirovaným členstvom môže zrušiť vlastnú budúcu rezerváciu; novú vytvoriť nemôže. |
-| 4:10–4:40 | Prihláste sa ako `trener`, otvorte rozvrh. | Rozvrh je iba na čítanie. Bez členstiev, vlastných rezervácií, účastníkov a správy tréningov. |
+| 4:10–4:40 | Prihláste sa ako `trener`, otvorte rozvrh. | Spoločný rozvrh zobrazuje obsadenosť. Po resete odkaz **Moje tréningy** vysvetlí, že účet musí najprv prepojiť administrátor. |
 | 4:40–5:00 | Ukážte úzke zobrazenie pre telefón a odhláste sa. | Obsah sa prispôsobí šírke. Odhlásenie zneplatní prístup k chráneným údajom. |
 
 ## Dôkazy mimo päťminútovej prezentácie
@@ -43,13 +43,20 @@ Otvorte http://127.0.0.1:8000. Heslo predpripravených účtov je `Demo123!`. Re
 2. V časti **Tréneri** otvorte pri Marekovi Novákovi **Prepojenie účtu** a vyberte `trener`. Na čerstvých ukážkových dátach jeho budúce tréningy zabránia zrušeniu prepojenia aj deaktivácii položky. V časti **Účty** skúste deaktivovať `trener` alebo mu zmeniť rolu na recepciu. Aplikácia obe zmeny odmietne.
 3. V časti **Aktivity** premenujte **Funkčný tréning**. V oddelenom okne sa prihláste ako `boris` a skontrolujte nový názov v **Rozvrhu** aj v **Mojich rezerváciách**. Číslo rezervácie zostane rovnaké. Tlačidlo **Katalóg** sa klientovi nezobrazí. [Overenie INC-03](reports/validation-inc-03.md)
 
+**INC-04 · Rozvrh trénera.** Podľa INC-03 prepojte účet `trener` s Marekom Novákom.
+
+1. Prihláste sa ako `trener` a otvorte **Moje tréningy → Pridať tréning**. Vyberte existujúcu aktivitu a sálu, zadajte termín v Bratislave šesť dní po resete a kapacitu 2. Uložte tréning. Zobrazí sa aj v **Spoločnom rozvrhu**.
+2. Skúste pridať ďalší tréning toho istého trénera v rovnakom čase. Aplikácia odmietne prekrytie. V oddelenom okne sa prihláste ako `anna` a nechajte nový tréning zobrazený v rozvrhu. V okne trénera posuňte jeho termín.
+3. V okne klienta kliknite na **Rezervovať miesto** pri zobrazenom tréningu. Aplikácia obnoví údaje a vyžiada nové potvrdenie. Rezervujte aktualizovaný termín.
+4. V okne trénera obnovte zoznam a upravte tréning. Termín, aktivita a priestor sa uzamknú. Uložte kapacitu 1 a skontrolujte plnú obsadenosť. Po zrušení rezervácie klientom sa miesto uvoľní a údaje o tréningu zostanú uzamknuté. [Overenie INC-04](reports/validation-inc-04.md)
+
 Zachovanie dát možno overiť zastavením a opätovným spustením servera bez resetu. Súbeh posledného miesta overujú automatické testy s nezávislými požiadavkami; rýchle klikanie v jednom prehliadači ho nedokazuje.
 
 ```powershell
 & .\.venv\Scripts\python.exe -m pytest -q tests
-node --test tests/mutations.test.mjs
+node --test tests/mutations.test.mjs tests/training-times.test.mjs
 ```
 
-Node je voliteľný iba pre tri JavaScript testy, aplikácia ho nepotrebuje. Prehľad SC-P01–SC-P20 a skutočné výsledky sú v `reports/validation.md`.
+Node je potrebný iba na spustenie voliteľných testov JavaScriptu. Prehľad SC-P01–SC-P20 a skutočné výsledky sú v `reports/validation.md`.
 
 Pri neistom výsledku požiadavky aplikácia automaticky neposiela ďalší POST. Najprv obnoví aktuálny stav; ak obnova zlyhá, ďalšia rezervácia zostane zablokovaná až do úspešného obnovenia. Po zrušení môže oneskorený starý POST vytvoriť novú rezerváciu — je to schválené obmedzenie prototypu.

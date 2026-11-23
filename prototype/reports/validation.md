@@ -1,6 +1,6 @@
 # Implementation validation: POC-BOOKING v0.1.1
 
-For the subsequent account increments, see [INC-01 validation](validation-inc-01.md) and [INC-02 validation](validation-inc-02.md).
+For subsequent increments, see [INC-01 validation](validation-inc-01.md), [INC-02 validation](validation-inc-02.md), [INC-03 validation](validation-inc-03.md) and [INC-04 validation](validation-inc-04.md).
 
 Date: **2026-11-16** (Europe/Budapest). Mode: **IMPLEMENT_CHANGE**.
 

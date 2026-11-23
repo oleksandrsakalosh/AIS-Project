@@ -23,7 +23,7 @@ def initialize(path=DEFAULT_DB, *, reset=False, now=None):
             if "metadata" not in tables or connection.execute("SELECT value FROM metadata WHERE key='application'").fetchone() != ("POC-BOOKING",):
                 raise ValueError("Refusing to reset a database not owned by this demo")
             connection.execute("PRAGMA foreign_keys=OFF")
-            for table in ("sessions", "reservations", "trainings", "memberships", "catalog_creates",
+            for table in ("sessions", "reservations", "training_creates", "trainings", "memberships", "catalog_creates",
                           "users", "activities", "trainers", "rooms", "metadata"):
                 connection.execute(f'DROP TABLE IF EXISTS "{table}"')  # fixed internal names only
             connection.commit()
@@ -45,7 +45,9 @@ def initialize(path=DEFAULT_DB, *, reset=False, now=None):
         connection.executemany("INSERT INTO rooms(id,name) VALUES (?,?)", [(1,"Sála A"),(2,"Štúdio B")])
         for tid, days, capacity in [(1,1,3),(2,2,1),(3,3,1),(4,-1,8),(5,4,2)]:
             start = now + timedelta(days=days)
-            connection.execute("INSERT INTO trainings VALUES (?,?,?,?,?,?,?)", (tid,tid,1 if tid%2 else 2,1 if tid%2 else 2,stamp(start),stamp(start+timedelta(hours=1)),capacity))
+            connection.execute(
+                "INSERT INTO trainings(id,activity_id,trainer_id,room_id,starts_at,ends_at,capacity) VALUES (?,?,?,?,?,?,?)",
+                (tid,tid,1 if tid%2 else 2,1 if tid%2 else 2,stamp(start),stamp(start+timedelta(hours=1)),capacity))
         for user_id, training_id, created in [(2,1,now-timedelta(hours=2)),(2,3,now-timedelta(hours=2)),(3,5,now-timedelta(days=2))]:
             connection.execute("INSERT INTO reservations(user_id,training_id,status,created_at) VALUES (?,?,'confirmed',?)", (user_id,training_id,stamp(created)))
         connection.commit()

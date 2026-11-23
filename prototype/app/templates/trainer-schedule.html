@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Moje tréningy{% endblock %}
+{% block content %}
+<section class="staff-panel">
+  <h1>Moje tréningy</h1>
+  <div class="staff-links">
+    <button id="training-refresh" class="button button-outline" type="button">Obnoviť tréningy</button>
+    <a class="button button-outline" href="/schedule">Spoločný rozvrh</a>
+  </div>
+</section>
+<section class="admin-grid" aria-label="Správa tréningov">
+  <div class="admin-create account-panel">
+    <button id="training-new" class="button button-primary" type="button" hidden>Pridať tréning</button>
+    <div id="training-recovery" hidden>
+      <p>Výsledok vytvorenia tréningu treba overiť.</p>
+      <div class="catalog-form-actions">
+        <button id="training-verify" class="button button-primary" type="button">Overiť vytvorenie</button>
+        <button id="training-abandon" class="button button-outline" type="button">Ukončiť overovanie</button>
+      </div>
+    </div>
+    <form id="training-form" hidden>
+      <h2 id="training-form-title"></h2>
+      <p id="training-trainer" class="muted"></p>
+      <p id="training-lock" class="muted" hidden>Tréning má históriu rezervácií. Môžete zmeniť iba kapacitu.</p>
+      <fieldset>
+        <label for="training-activity">Aktivita</label>
+        <select id="training-activity" name="activity" required></select>
+        <label for="training-room">Priestor</label>
+        <select id="training-room" name="room" required></select>
+        <label for="training-start">Začiatok (Bratislava)</label>
+        <input id="training-start" name="start" type="datetime-local" step="1" required>
+        <div id="training-start-choice" hidden>
+          <label for="training-start-offset">Posun voči UTC pre začiatok</label>
+          <select id="training-start-offset" name="startOffset"></select>
+        </div>
+        <label for="training-end">Koniec (Bratislava)</label>
+        <input id="training-end" name="end" type="datetime-local" step="1" required>
+        <div id="training-end-choice" hidden>
+          <label for="training-end-offset">Posun voči UTC pre koniec</label>
+          <select id="training-end-offset" name="endOffset"></select>
+        </div>
+        <label for="training-capacity">Kapacita</label>
+        <input id="training-capacity" name="capacity" type="number" min="1" max="9007199254740991" required>
+        <div class="catalog-form-actions">
+          <button class="button button-primary" type="submit">Uložiť tréning</button>
+          <button id="training-discard" class="button button-outline" type="button">Zahodiť úpravy</button>
+        </div>
+      </fieldset>
+    </form>
+  </div>
+  <section aria-labelledby="training-editor-list-title">
+    <h2 id="training-editor-list-title" class="admin-list-heading">Budúce tréningy</h2>
+    <div id="training-editor-list" class="admin-list" aria-busy="true"></div>
+  </section>
+</section>
+{% endblock %}

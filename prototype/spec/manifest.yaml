@@ -53,6 +53,17 @@ local_increments:
     decisions: ["DEC-C02", "DEC-C10", "DEC-C11", "DEC-C12"]
     approval_evidence: "User confirmation and IMPLEMENT_CHANGE authorization on 2026-11-23, recorded in contract section 7"
     validation: "prototype/reports/validation-inc-03.md"
+  - id: "INC-04"
+    requirements: ["R-04", "CP-03", "R-02/CP-05 integration", "R-07 trainer scheduling access"]
+    status: "implemented"
+    contract:
+      id: "INC-04-TRAINER-SCHEDULING-HTTP"
+      version: "0.1.0"
+      status: "approved"
+      location: "prototype/spec/drafts/increment-04-trainer-scheduling-http-v0.1.0.md"
+    decisions: ["DEC-C03", "DEC-C04", "DEC-C13", "DEC-C14"]
+    approval_evidence: "User approval and IMPLEMENT_CHANGE authorization on 2026-11-23, recorded in contract section 7"
+    validation: "prototype/reports/validation-inc-04.md"
 
 project_sources:
   - path: "docs/Informačný_systém_pre_správu_športového_centra.pdf"

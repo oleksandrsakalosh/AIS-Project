@@ -1,5 +1,7 @@
 import {submitOnce} from './mutations.mjs';
 import {clearCatalogRecovery, setupCatalog} from './catalog.mjs';
+import {clearTrainingRecovery, setupTrainerSchedule} from './trainer-schedule.mjs';
+import {bratislavaDate as date, bratislavaTime as time, trainingTime} from './training-times.mjs';
 
 const page = document.body.dataset.page;
 let user, csrf, snapshot, busy = false, reconciled = false;
@@ -34,6 +36,7 @@ const statusLabels = {active: 'Aktívny', disabled: 'Deaktivovaný'};
 
 function signIn() {
   clearCatalogRecovery();
+  clearTrainingRecovery();
   user = csrf = snapshot = null;
   $('#main').replaceChildren($('#message'));
   $('.account')?.remove();
@@ -67,8 +70,6 @@ async function api(path, options = {}) {
   } finally { clearTimeout(timer); }
 }
 
-const time = value => new Intl.DateTimeFormat('sk-SK', {timeZone: 'Europe/Bratislava', hour: '2-digit', minute: '2-digit'}).format(new Date(value));
-const date = value => new Intl.DateTimeFormat('sk-SK', {timeZone: 'Europe/Bratislava', weekday: 'long', day: 'numeric', month: 'long'}).format(new Date(value));
 const started = training => Date.parse(training.starts_at) <= Date.now();
 function element(tag, className, text) {
   const node = document.createElement(tag);
@@ -89,7 +90,7 @@ function trainingCard(training) {
   const past = started(training);
   const top = element('div', 'card-top');
   top.append(element('span', 'date-label', date(training.starts_at)), element('span', 'pill ' + (past ? 'pill-muted' : ''), past ? 'MINULÝ TRÉNING' : training.moja_rezervacia_id ? 'REZERVOVANÉ' : training.volne_miesta ? 'VOĽNÉ MIESTA' : 'OBSADENÉ'));
-  card.append(top, element('div', 'training-time', time(training.starts_at) + ' — ' + time(training.ends_at)), element('h3', '', training.aktivita), element('p', 'training-details', training.trener + ' · ' + training.priestor));
+  card.append(top, element('div', 'training-time', trainingTime(training)), element('h3', '', training.aktivita), element('p', 'training-details', training.trener + ' · ' + training.priestor));
   const capacity = element('div', 'capacity');
   capacity.append(element('span', '', 'Voľné miesta'), element('strong', '', `${training.volne_miesta} / ${training.kapacita}`));
   const meter = element('meter', 'capacity-meter');
@@ -102,7 +103,8 @@ function trainingCard(training) {
     else if (training.moja_rezervacia_id) { label = 'Miesto je vaše ✓'; disabled = true; }
     else if (snapshot.membership?.stav !== 'active') { label = 'Potrebné aktívne členstvo'; disabled = true; }
     else if (!training.volne_miesta) { label = 'Tréning je plný'; disabled = true; }
-    card.append(action(label, () => mutate('POST', '/reservations', {id_klienta: user.id, id_treningu: training.id_treningu}), disabled));
+    card.append(action(label, () => mutate('POST', '/reservations',
+      {id_klienta: user.id, id_treningu: training.id_treningu}, training), disabled));
   }
   return card;
 }
@@ -158,16 +160,43 @@ async function refresh() {
   render();
 }
 
-async function mutate(method, path, body) {
+async function mutate(method, path, body, selected) {
   if (busy || !reconciled) return;
   busy = true; render();
   notice('Spracúvam požiadavku…');
+  if (selected) {
+    let refusal;
+    try {
+      await refresh();
+      const current = snapshot.trainings.find(training => training.id_treningu === selected.id_treningu);
+      if (!current) refusal = messages.training_not_found;
+      else if (started(current)) refusal = messages.training_started;
+      else if (['starts_at', 'ends_at', 'aktivita', 'trener', 'priestor'].some(name => current[name] !== selected[name])) {
+        refusal = 'Údaje o tréningu sa zmenili. Skontrolujte nový termín a znova potvrďte rezerváciu.';
+      } else if (current.moja_rezervacia_id) refusal = messages.duplicate_reservation;
+      else if (snapshot.membership?.stav !== 'active') refusal = messages.membership_inactive;
+      else if (!current.volne_miesta) refusal = messages.capacity_full;
+    } catch {
+      refusal = 'Rozvrh sa nepodarilo overiť. Obnovte údaje a skúste znova.';
+    }
+    if (!user) return;
+    if (refusal) {
+      busy = false; render();
+      notice(refusal, true);
+      return;
+    }
+  }
   const outcome = await submitOnce(() => api(path, {method, ...(body ? {body: JSON.stringify(body)} : {})}), refresh);
   if (!user) return;
   busy = false; render();
   if (!outcome.reconciled) notice('Aktuálny stav sa nepodarilo načítať. Ďalšia rezervácia je zablokovaná, kým neobnovíte údaje. Požiadavku automaticky neopakujem.', true);
   else if (!outcome.ok) notice(messages[outcome.error.code] || messages.internal_error, true);
-  else notice(method === 'POST' ? 'Miesto je vaše. Rezervácia bola potvrdená.' : 'Rezervácia je zrušená. Miesto sme uvoľnili.');
+  else if (method === 'POST') {
+    const booking = snapshot.reservations.find(row => row.id_rezervacie === outcome.result.id_rezervacie);
+    const training = booking?.training;
+    const details = training ? ` ${training.aktivita} · ${training.trener} · ${training.priestor} · ${date(training.starts_at)} ${trainingTime(training)}.` : '';
+    notice('Miesto je vaše. Rezervácia bola potvrdená.' + details);
+  } else notice('Rezervácia je zrušená. Miesto sme uvoľnili.');
 }
 
 function setupRegistration() {
@@ -367,6 +396,7 @@ async function boot() {
     const session = await api('/session');
     user = session.user; csrf = session.csrf_token;
     if (user?.role !== 'admin') clearCatalogRecovery();
+    if (user?.role !== 'trainer') clearTrainingRecovery();
     if (page === 'register') {
       setupRegistration();
       return;
@@ -379,7 +409,10 @@ async function boot() {
         const button = $('#login-submit'); button.disabled = true; button.textContent = 'Prihlasujem…';
         try {
           const result = await api('/login', {method: 'POST', body: JSON.stringify({username: $('#username').value, password: $('#password').value})});
-          if (result.user.id !== user?.id) clearCatalogRecovery();
+          if (result.user.id !== user?.id) {
+            clearCatalogRecovery();
+            clearTrainingRecovery();
+          }
           window.location.assign(result.user.role === 'client' ? '/schedule' : '/staff');
         } catch (error) { notice(messages[error.code] || messages.internal_error, true); button.disabled = false; button.textContent = 'Prihlásiť sa ↗'; }
       });
@@ -391,6 +424,7 @@ async function boot() {
       try {
         await api('/logout', {method: 'POST'});
         clearCatalogRecovery();
+        clearTrainingRecovery();
         window.location.assign('/login');
       }
       catch (error) {
@@ -412,6 +446,10 @@ async function boot() {
     }
     if (page === 'catalog') {
       await setupCatalog({adminId: user.id, api, element, notice, messages});
+      return;
+    }
+    if (page === 'trainer-schedule') {
+      await setupTrainerSchedule({accountId: user.id, api, element, notice, messages});
       return;
     }
     const refreshButton = $('#refresh');

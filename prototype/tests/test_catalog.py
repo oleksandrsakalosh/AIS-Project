@@ -308,7 +308,9 @@ def test_SC_CAT11_upgrade_seed_and_restart(demo, admin, tmp_path):
     with demo.db.transaction() as conn:
         assert conn.execute("SELECT value FROM metadata WHERE key='schema_version'").fetchone()[0] == SCHEMA_VERSION
         assert conn.execute("SELECT * FROM users ORDER BY id").fetchall() == accounts_before
-        assert conn.execute("SELECT * FROM trainings ORDER BY id").fetchall() == trainings_before
+        migrated = conn.execute("SELECT * FROM trainings ORDER BY id").fetchall()
+        assert [tuple(row)[:-1] for row in migrated] == [tuple(row) for row in trainings_before]
+        assert all(row["version"] == 1 for row in migrated)
         assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
     trainer = items(admin, "trainers")[0]
     assert trainer["status"] == "active" and trainer["version"] == 1 and trainer["account_id"] is None

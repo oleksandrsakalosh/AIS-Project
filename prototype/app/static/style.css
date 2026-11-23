@@ -151,3 +151,5 @@
 .catalog-form-actions .button { flex: 1; }
 .catalog-deactivate { margin-top: 8px; }
 .training-card h3, .training-details, .reservation-info { overflow-wrap: anywhere; }
+#training-form input { min-width: 0; max-width: 100%; }
+#training-form h2, #training-trainer { overflow-wrap: anywhere; }

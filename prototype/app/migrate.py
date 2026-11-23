@@ -2,10 +2,11 @@
 import argparse
 from pathlib import Path
 
-from .db import Database, DEFAULT_DB
+from .db import Database, DEFAULT_DB, instant
+from .models import MAX_SAFE_INTEGER
 
 
-SCHEMA_VERSION = "0.4.0"
+SCHEMA_VERSION = "0.5.0"
 
 
 def upgrade_accounts(conn, version):
@@ -54,6 +55,39 @@ def upgrade_catalog(conn):
     """)
 
 
+def validate_training_rows(conn):
+    for training in conn.execute("""
+        SELECT t.id, starts_at, ends_at, capacity,
+               (SELECT COUNT(*) FROM reservations r WHERE r.training_id=t.id AND r.status='confirmed') AS occupied
+        FROM trainings t
+    """):
+        capacity = training["capacity"]
+        if type(capacity) is not int or not 1 <= capacity <= MAX_SAFE_INTEGER:
+            raise ValueError(f'Training {training["id"]} capacity must be an integer from 1 to {MAX_SAFE_INTEGER}.')
+        start, end = instant(training["starts_at"]), instant(training["ends_at"])
+        if (start.utcoffset() is None or end.utcoffset() is None or start >= end
+                or training["occupied"] > capacity):
+            raise ValueError("Invalid training interval or occupancy in demo database.")
+
+
+def upgrade_schedule(conn):
+    conn.execute("ALTER TABLE trainings ADD COLUMN version INTEGER NOT NULL DEFAULT 1 "
+                 "CHECK (version BETWEEN 1 AND 9007199254740991)")
+    conn.execute("CREATE INDEX training_by_trainer ON trainings(trainer_id)")
+    conn.execute("CREATE INDEX training_by_room ON trainings(room_id)")
+    conn.execute("""
+        CREATE TABLE training_creates (
+            account_id INTEGER NOT NULL REFERENCES users(id),
+            request_id TEXT NOT NULL,
+            trainer_id INTEGER NOT NULL REFERENCES trainers(id),
+            training_id INTEGER NOT NULL REFERENCES trainings(id),
+            fields TEXT NOT NULL,
+            response TEXT NOT NULL,
+            PRIMARY KEY (account_id, request_id)
+        )
+    """)
+
+
 def upgrade(path=DEFAULT_DB):
     with Database(path).transaction(write=True, rebuild_tables=True) as conn:
         metadata = {}
@@ -62,13 +96,16 @@ def upgrade(path=DEFAULT_DB):
         if metadata.get("application") != "POC-BOOKING":
             raise ValueError("Refusing to upgrade a database not owned by this demo")
         version = metadata.get("schema_version")
+        if version not in ("0.1.1", "0.2.0", "0.3.0", "0.4.0", SCHEMA_VERSION):
+            raise ValueError(f"Unsupported demo schema version: {version}")
+        validate_training_rows(conn)
         if version == SCHEMA_VERSION:
             return False
-        if version not in ("0.1.1", "0.2.0", "0.3.0"):
-            raise ValueError(f"Unsupported demo schema version: {version}")
         if version in ("0.1.1", "0.2.0"):
             upgrade_accounts(conn, version)
-        upgrade_catalog(conn)
+        if version != "0.4.0":
+            upgrade_catalog(conn)
+        upgrade_schedule(conn)
         conn.execute("UPDATE metadata SET value=? WHERE key='schema_version'", (SCHEMA_VERSION,))
     return True
 
@@ -77,7 +114,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--db", type=Path, default=DEFAULT_DB)
     args = parser.parse_args()
-    print("Demo database upgraded." if upgrade(args.db) else "Demo database is already current.")
+    try:
+        upgraded = upgrade(args.db)
+    except ValueError as exc:
+        parser.exit(1, f"Demo database migration refused: {exc}\n")
+    print("Demo database upgraded." if upgraded else "Demo database is already current.")
 
 
 if __name__ == "__main__":
