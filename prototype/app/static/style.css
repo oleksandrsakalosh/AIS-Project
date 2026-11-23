@@ -41,3 +41,91 @@
 .account .button-quiet {
   flex-shrink: 0;
 }
+
+.staff-links, .admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+.admin-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  align-items: start;
+  gap: 26px;
+}
+.admin-create h2, .admin-list-heading {
+  margin-top: 0;
+}
+.admin-create fieldset {
+  border: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+.admin-create input {
+  margin-bottom: 9px;
+}
+.admin-create small {
+  display: block;
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+.admin-grid select {
+  color: var(--green);
+  background: #fbfcf8;
+  border: 1px solid #cfd9cb;
+  border-radius: 6px;
+  font: inherit;
+  min-height: 44px;
+  padding: 7px 10px;
+  width: 100%;
+}
+.admin-grid select:focus-visible {
+  outline: 3px solid #8da83f;
+  outline-offset: 4px;
+}
+.admin-create select {
+  margin-bottom: 16px;
+}
+.admin-list {
+  display: grid;
+  gap: 12px;
+}
+.admin-account {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 17px 20px;
+  overflow-wrap: anywhere;
+}
+.admin-account h3, .admin-account p {
+  margin: 0 0 6px;
+}
+.admin-status {
+  font-size: 13px;
+  font-weight: 650;
+}
+.admin-actions {
+  margin-top: 12px;
+}
+.admin-role {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: 8px;
+}
+.admin-role label {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 780px) {
+  .admin-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .staff-panel h1 {
+    font-size: clamp(2rem, 10vw, 2.5625rem);
+    overflow-wrap: anywhere;
+  }
+}

@@ -37,9 +37,12 @@ class Database:
         return connection
 
     @contextmanager
-    def transaction(self, write=False):
+    def transaction(self, write=False, *, rebuild_tables=False):
         connection = self.connect()
         try:
+            if rebuild_tables:
+                # SQLite requires this before BEGIN. Check every reference before commit.
+                connection.execute("PRAGMA foreign_keys=OFF")
             deadline = time.monotonic() + self.lock_timeout
             while True:
                 try:
@@ -52,6 +55,8 @@ class Database:
                         raise
                     time.sleep(0.01)
             yield connection
+            if rebuild_tables and connection.execute("PRAGMA foreign_key_check").fetchone():
+                raise sqlite3.IntegrityError("Foreign key check failed during migration")
             connection.commit()
         except BaseException:
             connection.rollback()

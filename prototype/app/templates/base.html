@@ -19,9 +19,11 @@
         {% if user.role == 'client' %}
         <a href="/my-reservations" {% if page == 'reservations' %}aria-current="page"{% endif %}>Moje rezervácie</a>
         <a href="/profile" {% if page == 'profile' %}aria-current="page"{% endif %}>Môj profil</a>
+        {% elif user.role == 'admin' %}
+        <a href="/admin/accounts" {% if page == 'admin' %}aria-current="page"{% endif %}>Účty</a>
         {% endif %}
       </nav>
-      <div class="account"><span class="account-name">{{ user.username }}<small>{{ 'Klient' if user.role == 'client' else 'Tréner' }}</small></span><button id="logout" class="button button-quiet">Odhlásiť sa</button></div>
+      <div class="account"><span class="account-name">{{ user.username }}<small>{{ role_labels[user.role] }}</small></span><button id="logout" class="button button-quiet">Odhlásiť sa</button></div>
       {% else %}<span class="header-note">Viac pohybu. Menej vybavovania.</span>{% endif %}
     </div>
   </header>

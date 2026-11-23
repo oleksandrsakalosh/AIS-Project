@@ -8,11 +8,11 @@ Booking baseline [POC-BOOKING and POC-BOOKING-API v0.1.1](prototype.md). The [IN
 
 The user confirmed DEC-C08 and explicitly authorized IMPLEMENT_CHANGE for INC-01. A visitor signs up with a username, password and display name. The server assigns the Client role. The client signs in manually, can view the schedule and can edit their own display name. Signup creates the account only. Booking requires an effective active membership.
 
-The original project PDF, p. 18, describes a waiting membership after registration. The local INC-01 decision creates no membership row, so the existing `GET /memberships/current` returns `{"membership":null}` and a valid booking attempt for a future available training receives `403 membership_inactive`. The project PDF and the historical v0.1.1 approval retain their original scope. The other course-project decisions remain open.
+The original project PDF, p. 18, describes a waiting membership after registration. The local INC-01 decision creates no membership row, so the existing `GET /memberships/current` returns `{"membership":null}` and a valid booking attempt for a future available training receives `403 membership_inactive`. The project PDF and the historical v0.1.1 approval retain their original scope. Later account and staff decisions are recorded in the [INC-02 contract](drafts/increment-02-account-administration-http-v0.1.0.md).
 
 ## Delivered HTTP interface v0.1.0
 
-The user confirmed behavior and authorized implementation directly. The route names and response details below describe the implementation. The existing `/openapi.json` and generated reference still describe POC-BOOKING-API v0.1.1.
+The user confirmed behavior and authorized implementation directly. The route names and response details below describe INC-01 at delivery, when the live and generated OpenAPI both described POC-BOOKING-API v0.1.1. INC-02 adds session roles and account administration to the live schema.
 
 | Operation | Input and outcome | Trace |
 | --- | --- | --- |

@@ -31,6 +31,17 @@ local_increments:
     authorization_and_http_interface: "prototype/spec/inc-01-client-account.md"
     specification_draft: "prototype/spec/drafts/increment-01-client-registration.md"
     validation: "prototype/reports/validation-inc-01.md"
+  - id: "INC-02"
+    requirements: ["R-07", "CP-01"]
+    status: "implemented"
+    contract:
+      id: "INC-02-ACCOUNT-ADMIN-HTTP"
+      version: "0.1.0"
+      status: "approved"
+      location: "prototype/spec/drafts/increment-02-account-administration-http-v0.1.0.md"
+    decisions: ["DEC-C01", "DEC-C09"]
+    approval_evidence: "User confirmation and IMPLEMENT_CHANGE authorization on 2026-11-23, recorded in contract section 7"
+    validation: "prototype/reports/validation-inc-02.md"
 
 project_sources:
   - path: "docs/Informačný_systém_pre_správu_športového_centra.pdf"

@@ -4,8 +4,10 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('client','trainer')),
-    display_name TEXT
+    role TEXT NOT NULL CHECK (role IN ('client','trainer','reception','admin')),
+    display_name TEXT,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','disabled')),
+    version INTEGER NOT NULL DEFAULT 1 CHECK (version BETWEEN 1 AND 9007199254740991)
 );
 CREATE TABLE memberships (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

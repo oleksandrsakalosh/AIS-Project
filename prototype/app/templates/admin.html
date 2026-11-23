@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Správa účtov{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <h1>Správa účtov</h1>
+  <a class="button button-outline" href="/staff">Zamestnanecký portál</a>
+</div>
+<div class="admin-grid">
+  <section class="login-panel admin-create" aria-labelledby="create-title">
+    <h2 id="create-title">Vytvoriť účet zamestnanca</h2>
+    <form id="staff-form" method="post" action="/api/admin/accounts">
+      <fieldset disabled>
+        <label for="staff-username">Používateľské meno</label>
+        <input id="staff-username" name="username" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="3" maxlength="32" aria-describedby="staff-username-help" required>
+        <small id="staff-username-help">3 až 32 znakov. Začnite malým písmenom bez diakritiky alebo číslicou. Použiť môžete aj bodku, podčiarkovník a pomlčku.</small>
+        <label for="staff-name">Zobrazované meno</label>
+        <input id="staff-name" name="display_name" maxlength="80" required>
+        <label for="staff-password">Počiatočné heslo</label>
+        <input id="staff-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" aria-describedby="staff-password-help" required>
+        <small id="staff-password-help">12 až 128 znakov. Prihlasovacie údaje odovzdajte zamestnancovi.</small>
+        <label for="staff-role">Rola</label>
+        <select id="staff-role" name="role" required>
+          {% for role in ('trainer', 'reception', 'admin') %}
+          <option value="{{ role }}">{{ role_labels[role] }}</option>
+          {% endfor %}
+        </select>
+        <button class="button button-primary" type="submit">Vytvoriť účet</button>
+      </fieldset>
+    </form>
+  </section>
+  <section aria-labelledby="accounts-title">
+    <div class="section-heading admin-list-heading">
+      <h2 id="accounts-title">Používateľské účty</h2>
+      <button class="button button-outline" id="accounts-refresh" type="button">Obnoviť zoznam</button>
+    </div>
+    <div id="accounts-list" class="admin-list" aria-busy="true">
+      <p class="empty">Načítavam účty…</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

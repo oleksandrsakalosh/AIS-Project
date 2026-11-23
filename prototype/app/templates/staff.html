@@ -1,5 +1,14 @@
 {% extends 'base.html' %}
-{% block title %}Prístup trénera{% endblock %}
+{% block title %}Zamestnanecký portál{% endblock %}
 {% block content %}
-<section class="staff-panel"><span class="pill">PRÍSTUP TRÉNERA</span><h1>Rozvrh máte<br><em>na dosah.</em></h1><p>Tréner môže prezerať rozvrh a voľné miesta. Správa tréningov, členstiev a účastníkov nie je súčasťou tejto ukážky.</p><a class="button button-primary" href="/schedule">Zobraziť rozvrh ↗</a><p class="muted">Rezervovať miesto a spravovať vlastné rezervácie môže iba klient.</p></section>
+<section class="staff-panel">
+  <h1>Zamestnanecký portál</h1>
+  <p>V rozvrhu nájdete kapacitu a počet voľných miest na tréningoch.</p>
+  <div class="staff-links">
+    <a class="button button-primary" href="/schedule">Zobraziť rozvrh</a>
+    {% if user.role == 'admin' %}
+    <a class="button button-outline" href="/admin/accounts">Spravovať účty</a>
+    {% endif %}
+  </div>
+</section>
 {% endblock %}

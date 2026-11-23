@@ -20,8 +20,23 @@ const messages = {
   storage_unavailable: 'Údaje sú dočasne nedostupné. Skúste ich obnoviť.',
   internal_error: 'Operáciu sa nepodarilo dokončiť. Obnovte údaje.',
   validation: 'Skontrolujte zadané údaje.',
+  account_not_found: 'Účet sa nenašiel.',
+  account_changed: 'Účet sa medzitým zmenil.',
+  client_role_fixed: 'Klientskemu účtu nemožno priradiť zamestnaneckú rolu.',
+  last_active_admin: 'Aspoň jeden administrátor musí zostať aktívny.',
+  future_reservation: 'Účet má potvrdenú rezerváciu na budúci tréning. Klient ju môže najprv zrušiť.',
+  future_training_assignment: 'Tréner má pridelený budúci tréning.',
   network: 'Výsledok požiadavky sa nepodarilo overiť. Načítavam aktuálne údaje; rezerváciu automaticky neopakujem.'
 };
+const roleLabels = {client: 'Klient', trainer: 'Tréner', reception: 'Recepcia', admin: 'Administrátor'};
+const statusLabels = {active: 'Aktívny', disabled: 'Deaktivovaný'};
+
+function signIn() {
+  user = csrf = snapshot = null;
+  $('#main').replaceChildren($('#message'));
+  $('.account')?.remove();
+  window.location.replace('/login');
+}
 
 function notice(text, error = false) {
   const box = $('#message');
@@ -38,7 +53,11 @@ async function api(path, options = {}) {
     const response = await fetch(path, {...options, credentials: 'same-origin', cache: 'no-store', signal: controller.signal,
       headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrf || '', ...options.headers}});
     const body = response.status === 204 ? null : await response.json();
-    if (!response.ok) throw Object.assign(new Error(), {code: body?.error?.code || (response.status === 422 ? 'validation' : 'internal_error')});
+    if (!response.ok) {
+      const code = body?.error?.code || (response.status === 422 ? 'validation' : 'internal_error');
+      if (code === 'unauthorized' && page !== 'login' && page !== 'register') signIn();
+      throw Object.assign(new Error(), {code});
+    }
     return body;
   } catch (error) {
     if (error.code) throw error;
@@ -82,7 +101,7 @@ function trainingCard(training) {
     else if (snapshot.membership?.stav !== 'active') { label = 'Potrebné aktívne členstvo'; disabled = true; }
     else if (!training.volne_miesta) { label = 'Tréning je plný'; disabled = true; }
     card.append(action(label, () => mutate('POST', '/reservations', {id_klienta: user.id, id_treningu: training.id_treningu}), disabled));
-  } else card.append(element('p', 'muted', 'Prehľad trénera · iba na čítanie'));
+  }
   return card;
 }
 
@@ -90,7 +109,7 @@ function render() {
   if (!snapshot) return;
   if (page === 'schedule') {
     const membership = $('#membership');
-    if (user.role === 'trainer') membership.textContent = 'Prístup trénera · Rozvrh iba na čítanie. Správa centra je mimo ukážky.';
+    if (user.role !== 'client') membership.textContent = 'Rozvrh a obsadenosť · iba na čítanie';
     else {
       const labels = {active: 'Aktívne členstvo', pending: 'Členstvo čaká na aktiváciu alebo začiatok platnosti', expired: 'Členstvo vypršalo'};
       membership.textContent = snapshot.membership ? labels[snapshot.membership.stav] + (snapshot.membership.stav === 'active' ? ' · Platné do ' + date(snapshot.membership.valid_until) : '') : 'Nemáte evidované členstvo';
@@ -125,6 +144,7 @@ function render() {
 }
 
 async function refresh() {
+  if (!user) return;
   reconciled = false;
   render();
   const [trainings, membership, reservations] = await Promise.all([
@@ -141,6 +161,7 @@ async function mutate(method, path, body) {
   busy = true; render();
   notice('Spracúvam požiadavku…');
   const outcome = await submitOnce(() => api(path, {method, ...(body ? {body: JSON.stringify(body)} : {})}), refresh);
+  if (!user) return;
   busy = false; render();
   if (!outcome.reconciled) notice('Aktuálny stav sa nepodarilo načítať. Ďalšia rezervácia je zablokovaná, kým neobnovíte údaje. Požiadavku automaticky neopakujem.', true);
   else if (!outcome.ok) notice(messages[outcome.error.code] || messages.internal_error, true);
@@ -203,6 +224,142 @@ async function setupProfile() {
   });
 }
 
+function setupAdmin() {
+  const path = '/api/admin/accounts';
+  const form = $('#staff-form'), refreshButton = $('#accounts-refresh'), list = $('#accounts-list');
+  const fields = form.querySelector('fieldset');
+  let available = false, pending = false;
+
+  function setAvailability() {
+    fields.disabled = pending || !available;
+    refreshButton.disabled = pending;
+    list.querySelectorAll('button, select').forEach(control => {
+      control.disabled = fields.disabled;
+    });
+  }
+
+  function card(account) {
+    const row = element('article', 'admin-account');
+    row.dataset.accountId = account.id;
+    row.append(element('h3', '', account.display_name),
+      element('p', 'muted', `@${account.username} · ${roleLabels[account.role]}`),
+      element('p', 'admin-status', statusLabels[account.status]));
+    const actions = element('div', 'admin-actions');
+    const nextStatus = account.status === 'active' ? 'disabled' : 'active';
+    const state = element('button', 'button button-outline', nextStatus === 'disabled' ? 'Deaktivovať' : 'Aktivovať');
+    state.addEventListener('click', () => save(`${path}/${account.id}/status`, 'PUT',
+      {status: nextStatus, expected_version: account.version}, account.id));
+    actions.append(state);
+    if (account.role !== 'client') {
+      const roleForm = element('form', 'admin-role');
+      const select = element('select');
+      select.id = `role-${account.id}`;
+      const label = element('label', '', 'Nová rola');
+      label.htmlFor = select.id;
+      for (const role of ['trainer', 'reception', 'admin']) {
+        const option = element('option', '', roleLabels[role]);
+        option.value = role;
+        select.append(option);
+      }
+      select.value = account.role;
+      const submit = element('button', 'button button-outline', 'Uložiť rolu');
+      roleForm.append(label, select, submit);
+      roleForm.addEventListener('submit', event => {
+        event.preventDefault();
+        save(`${path}/${account.id}/role`, 'PUT',
+          {role: select.value, expected_version: account.version}, account.id);
+      });
+      actions.append(roleForm);
+    }
+    row.append(actions);
+    return row;
+  }
+
+  async function load() {
+    available = false;
+    setAvailability();
+    list.setAttribute('aria-busy', 'true');
+    try {
+      const {items} = await api(path);
+      list.replaceChildren(...items.map(card));
+      if (!items.length) list.append(element('p', 'empty', 'Zoznam účtov je prázdny.'));
+      available = true;
+      return items;
+    } finally {
+      list.setAttribute('aria-busy', 'false');
+      setAvailability();
+    }
+  }
+
+  async function reload() {
+    if (pending) return;
+    pending = true;
+    try {
+      await load();
+      notice('Zoznam účtov je aktuálny.');
+    } catch (error) {
+      if (!user) return;
+      list.replaceChildren();
+      notice('Zoznam sa nepodarilo načítať. Použite tlačidlo Obnoviť zoznam.', true);
+    } finally {
+      pending = false;
+      setAvailability();
+    }
+  }
+
+  async function save(url, method, data, id) {
+    if (pending || !available) return;
+    pending = true;
+    setAvailability();
+    try {
+      const account = await api(url, {method, body: JSON.stringify(data)});
+      if (account.id === user?.id && (account.status === 'disabled' || account.role !== user.role)) {
+        signIn();
+        return;
+      }
+      const existing = list.querySelector(`[data-account-id="${account.id}"]`);
+      if (existing) existing.replaceWith(card(account));
+      else list.append(card(account));
+      if (method === 'POST') form.reset();
+      notice(method === 'POST' ? 'Účet zamestnanca bol vytvorený.' : 'Údaje účtu sú uložené.');
+    } catch (error) {
+      if (!user) return;
+      if (['network', 'internal_error', 'storage_unavailable', 'account_changed', 'account_not_found'].includes(error.code)) {
+        try {
+          const items = await load();
+          const current = items.find(account => id ? account.id === id : account.username === data.username);
+          const state = current
+            ? `Aktuálny stav @${current.username} · ${statusLabels[current.status]} · ${roleLabels[current.role]}.`
+            : 'Účet sa v aktuálnom zozname nenašiel.';
+          const matches = current && (!data.role || current.role === data.role) &&
+            (!data.status || current.status === data.status);
+          const comparison = matches ? 'Požadovaná rola alebo stav zodpovedá zoznamu.' : 'Skontrolujte údaje pred ďalšou zmenou.';
+          const failure = error.code === 'network' ? 'Výsledok požiadavky sa nepodarilo overiť.' : messages[error.code];
+          notice(`${failure} ${state} ${comparison}`, true);
+        } catch {
+          if (user) {
+            list.replaceChildren();
+            notice('Výsledok sa nepodarilo overiť. Pred ďalšou zmenou obnovte zoznam účtov.', true);
+          }
+        }
+      } else {
+        notice(messages[error.code] || messages.internal_error, true);
+      }
+    } finally {
+      form.elements.password.value = '';
+      pending = false;
+      setAvailability();
+    }
+  }
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    save(path, 'POST', Object.fromEntries(new FormData(form)));
+  });
+  refreshButton.addEventListener('click', reload);
+  return reload();
+}
+
 async function boot() {
   try {
     const session = await api('/session');
@@ -219,30 +376,43 @@ async function boot() {
         const button = $('#login-submit'); button.disabled = true; button.textContent = 'Prihlasujem…';
         try {
           const result = await api('/login', {method: 'POST', body: JSON.stringify({username: $('#username').value, password: $('#password').value})});
-          window.location.assign(result.user.role === 'trainer' ? '/staff' : '/schedule');
+          window.location.assign(result.user.role === 'client' ? '/schedule' : '/staff');
         } catch (error) { notice(messages[error.code] || messages.internal_error, true); button.disabled = false; button.textContent = 'Prihlásiť sa ↗'; }
       });
       return;
     }
-    if (!user) { window.location.assign('/login'); return; }
+    if (!user) { signIn(); return; }
     $('#logout').addEventListener('click', async () => {
       $('#logout').disabled = true;
       try { await api('/logout', {method: 'POST'}); window.location.assign('/login'); }
-      catch (error) { notice(messages[error.code] || messages.internal_error, true); $('#logout').disabled = false; }
+      catch (error) {
+        if (error.code === 'csrf_invalid') {
+          try {
+            if (!(await api('/session')).user) { signIn(); return; }
+          } catch {}
+        }
+        if (user) { notice(messages[error.code] || messages.internal_error, true); $('#logout').disabled = false; }
+      }
     });
     if (page === 'profile') {
       await setupProfile();
       return;
     }
-    if ($('#refresh')) $('#refresh').addEventListener('click', async () => {
+    if (page === 'admin') {
+      await setupAdmin();
+      return;
+    }
+    const refreshButton = $('#refresh');
+    if (refreshButton) refreshButton.addEventListener('click', async () => {
       if (busy) return;
-      busy = true; $('#refresh').disabled = true;
+      busy = true; refreshButton.disabled = true;
       try { await refresh(); notice('Údaje sú aktuálne.'); }
       catch (error) { notice(messages[error.code] || messages.internal_error, true); }
-      finally { busy = false; $('#refresh').disabled = false; render(); }
+      finally { busy = false; refreshButton.disabled = false; render(); }
     });
     if (page !== 'staff') await refresh();
   } catch (error) {
+    if (error.code === 'unauthorized') return;
     const accountPage = page === 'register' || page === 'profile';
     const message = accountPage && error.code === 'network'
       ? 'Stránku sa nepodarilo načítať. Obnovte ju a skúste znova.'

@@ -356,5 +356,12 @@ def test_SC_P20_html_auth_pages_and_contract_metadata(demo):
     assert 'href="/my-reservations"' not in trainer.get("/schedule").text
     assert trainer.get("/my-reservations",follow_redirects=False).headers["location"] == "/staff"
     document = anna.get("/openapi.json").json()
-    assert document["info"]["version"] == "0.1.1"
-    assert set(document["paths"]) == {"/health","/session","/login","/logout","/trainings","/memberships/current","/reservations","/reservations/{id_rezervacie}"}
+    assert document["info"]["version"] == "0.2.0"
+    assert set(document["paths"]) == {
+        "/health", "/session", "/login", "/logout", "/trainings", "/memberships/current",
+        "/reservations", "/reservations/{id_rezervacie}", "/api/admin/accounts",
+        "/api/admin/accounts/{account_id}/role", "/api/admin/accounts/{account_id}/status",
+    }
+    assert document["components"]["schemas"]["SessionUser"]["properties"]["role"]["enum"] == [
+        "client", "trainer", "reception", "admin"
+    ]

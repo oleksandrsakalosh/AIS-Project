@@ -1,5 +1,7 @@
 # Implementation validation: POC-BOOKING v0.1.1
 
+For the subsequent account increments, see [INC-01 validation](validation-inc-01.md) and [INC-02 validation](validation-inc-02.md).
+
 Date: **2026-11-16** (Europe/Budapest). Mode: **IMPLEMENT_CHANGE**.
 
 Approved specification: `spec/prototype.md` v0.1.1. Approved contract: **POC-BOOKING-API v0.1.1**, section 6. Human approval is recorded in `spec/approval-v0.1.1.md` and the manifest. This report records implementation checks by the implementer; it is **not** the separate read-only independent verification, teacher approval, production acceptance or certification of the EA model.

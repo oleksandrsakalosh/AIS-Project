@@ -1,4 +1,5 @@
 """R-02 booking service. All mutation-dependent checks share the write lock."""
+from .auth import authorize
 from .db import instant, stamp
 from .errors import BusinessError
 from .membership import effective_state, get_membership
@@ -14,8 +15,11 @@ def check_membership(membership, now):
         raise BusinessError(403, "membership_inactive")
 
 
-def create_reservation(db, user_id, training_id):
+def create_reservation(db, cookie, requested_client_id, training_id):
     with db.transaction(write=True) as conn:
+        user_id = authorize(conn, cookie, db.clock(), "client")["id"]
+        if requested_client_id != user_id:
+            raise BusinessError(403, "client_mismatch")
         training = conn.execute("SELECT * FROM trainings WHERE id=?", (training_id,)).fetchone()
         if training is None:
             raise BusinessError(404, "training_not_found")
@@ -39,8 +43,9 @@ def create_reservation(db, user_id, training_id):
     return result
 
 
-def cancel_reservation(db, user_id, reservation_id):
+def cancel_reservation(db, cookie, reservation_id):
     with db.transaction(write=True) as conn:
+        user_id = authorize(conn, cookie, db.clock(), "client")["id"]
         row = conn.execute("SELECT r.*, t.starts_at FROM reservations r JOIN trainings t ON t.id=r.training_id "
                            "WHERE r.id=? AND r.user_id=?", (reservation_id, user_id)).fetchone()
         if row is None:

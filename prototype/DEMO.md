@@ -11,7 +11,7 @@ Postup inštalácie je v README. Pred prezentáciou zastavte server pomocou Ctrl
 & .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
 ```
 
-Otvorte http://127.0.0.1:8000. Heslo všetkých účtov je `Demo123!`. Reset zruší existujúce relácie; stránku obnovte. Termíny sa vytvárajú vzhľadom na čas resetu, pri ďalšom štarte sa samé neposúvajú.
+Otvorte http://127.0.0.1:8000. Heslo predpripravených účtov je `Demo123!`. Reset zruší existujúce relácie. Obnovte stránku. Termíny sa vytvárajú vzhľadom na čas resetu, pri ďalšom štarte sa samé neposúvajú.
 
 ## Scenár prezentácie
 
@@ -29,6 +29,13 @@ Otvorte http://127.0.0.1:8000. Heslo všetkých účtov je `Demo123!`. Reset zru
 ## Dôkazy mimo päťminútovej prezentácie
 
 **INC-01 · Registrácia a profil.** Na prihlasovacej stránke vyberte **Zaregistrujte sa**. Vytvorte si fiktívny účet s jedinečným používateľským menom, zobrazovaným menom a heslom s aspoň 12 znakmi. Prejdite na prihlásenie a prihláste sa ručne. V rozvrhu sa zobrazí **Nemáte evidované členstvo** a rezervovanie nebude dostupné. Otvorte **Môj profil**, uložte nové zobrazované meno a obnovte stránku. Používateľské meno aj uložené zobrazované meno zostanú viditeľné.
+
+**INC-02 · Účty zamestnancov.** Po inicializácii alebo resete spustite `& .\.venv\Scripts\python.exe -m app.bootstrap_admin` a zadajte fiktívne údaje prvého administrátora. Prihláste sa a v zamestnaneckom portáli vyberte **Spravovať účty**.
+
+1. Vytvorte účet recepcie. Prihláste sa ním v druhom okne s oddelenou reláciou. Zobrazí sa rozvrh s obsadenosťou. Pri otvorení `/admin/accounts` vás aplikácia vráti na zamestnanecký portál.
+2. V okne administrátora zmeňte tomuto účtu rolu na **Tréner** a uložte ju. V okne recepcie obnovte rozvrh. Aplikácia vyžiada nové prihlásenie, po ktorom sa zobrazí nová rola.
+3. Deaktivujte a znovu aktivujte tento účet. Staré prihlásenie sa neobnoví. Účet s novým prihlásením opäť získa prístup.
+4. Skúste deaktivovať posledného administrátora a klienta `boris` s budúcou potvrdenou rezerváciou. Obe požiadavky aplikácia odmietne a zobrazí konkrétny dôvod. [Overenie INC-02](reports/validation-inc-02.md)
 
 Zachovanie dát možno overiť zastavením a opätovným spustením servera bez resetu. Súbeh posledného miesta overujú automatické testy s nezávislými požiadavkami; rýchle klikanie v jednom prehliadači ho nedokazuje.
 

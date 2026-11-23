@@ -4,6 +4,10 @@ from unicodedata import category
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 PositiveID = Annotated[int, Field(strict=True, gt=0)]
+AccountNumber = Annotated[int, Field(strict=True, ge=1, le=9007199254740991)]
+StaffRole = Literal["trainer", "reception", "admin"]
+AccountRole = Literal["client", "trainer", "reception", "admin"]
+AccountStatus = Literal["active", "disabled"]
 
 
 class LoginInput(BaseModel):
@@ -28,6 +32,49 @@ class ProfileUpdate(BaseModel):
 class RegistrationInput(ProfileUpdate):
     username: Annotated[str, Field(min_length=3, max_length=32, pattern=r"^[a-z0-9][a-z0-9._-]*$", strict=True)]
     password: Annotated[str, Field(min_length=12, max_length=128, strict=True)]
+
+
+class StaffRegistration(RegistrationInput):
+    role: StaffRole
+
+
+class AccountVersionInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_version: AccountNumber
+
+
+class AccountStatusUpdate(AccountVersionInput):
+    status: AccountStatus
+
+
+class AccountRoleUpdate(AccountVersionInput):
+    role: StaffRole
+
+
+class SessionUser(BaseModel):
+    id: PositiveID
+    username: str
+    role: AccountRole
+
+
+class SessionView(BaseModel):
+    user: SessionUser | None
+    csrf_token: str
+
+
+class LoginView(SessionView):
+    user: SessionUser
+
+
+class AccountView(SessionUser):
+    id: AccountNumber
+    display_name: str
+    status: AccountStatus
+    version: AccountNumber
+
+
+class AccountList(BaseModel):
+    items: list[AccountView]
 
 
 class ProfileView(BaseModel):

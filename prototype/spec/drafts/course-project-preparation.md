@@ -50,7 +50,7 @@ INC-05 can proceed after INC-01 while staff features progress. Carry Slovak labe
 
 ## Decisions for the user
 
-DEC-C08 is confirmed in the [INC-01 decision record](../inc-01-client-account.md). The other recommendations are open. The listed increment identifies when each answer affects a contract.
+DEC-C08 is confirmed in the [INC-01 decision record](../inc-01-client-account.md). DEC-C01 and DEC-C09 are confirmed in the [INC-02 approval](increment-02-account-administration-http-v0.1.0.md#7-approval-and-decisions). DEC-C02–07 remain open for their dependent contracts.
 
 | Decision | What the sources leave open and the recommended answer | Consequences |
 | --- | --- | --- |
@@ -68,4 +68,4 @@ DEC-C08 is confirmed in the [INC-01 decision record](../inc-01-client-account.md
 
 Keep one short specification per increment with its rules, scenarios, decision links and traceability. In DESIGN_CONTRACT, draft a versioned contract and map operations to requirements, application service and owner, data, rules and scenarios. Record the user's explicit approval of the specific specification and contract version before implementation. After authorized implementation, run the increment's tests and the applicable booking regressions. Use a separate verification report to record commands, results, manual evidence and unknowns. Record any material architecture decision in the decision table, with the existing views cited. This is the compact student adaptation of SDD.
 
-The user confirmed **DEC-C08** and authorized INC-01 in IMPLEMENT_CHANGE. See the [decision and delivered interface](../inc-01-client-account.md). DEC-C01–07 and DEC-C09 are open for their dependent contracts. The [manifest candidate](manifest.proposed.yaml) and [AGENTS.md candidate](AGENTS.proposed.md) remain proposals for wider adoption.
+The user confirmed **DEC-C08** for INC-01 and **DEC-C01 / DEC-C09** for INC-02 and authorized both increments. See the [INC-01 delivered interface](../inc-01-client-account.md) and the [INC-02 approval](increment-02-account-administration-http-v0.1.0.md#7-approval-and-decisions). The [manifest candidate](manifest.proposed.yaml) and [AGENTS.md candidate](AGENTS.proposed.md) remain proposals for wider adoption.
