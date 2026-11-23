@@ -24,6 +24,14 @@ contract:
   location: "prototype/spec/prototype.md#6-approved-api-contract"
   approval_evidence: "prototype/spec/approval-v0.1.1.md"
 
+local_increments:
+  - id: "INC-01"
+    requirements: ["R-01", "R-07 access subset"]
+    status: "implemented"
+    authorization_and_http_interface: "prototype/spec/inc-01-client-account.md"
+    specification_draft: "prototype/spec/drafts/increment-01-client-registration.md"
+    validation: "prototype/reports/validation-inc-01.md"
+
 project_sources:
   - path: "docs/Informačný_systém_pre_správu_športového_centra.pdf"
     use: "pp. 2, 5, 11-19: scope, services, responsibilities, R-02, C-39/C-60, I-01/I-05/I-06, C-01"

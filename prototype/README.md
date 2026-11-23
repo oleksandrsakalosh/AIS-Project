@@ -2,6 +2,8 @@
 
 Working local proof of concept for **POC-BOOKING specification v0.1.1** and **POC-BOOKING-API v0.1.1**. The user approved DEC-P01–DEC-P08 and seven review amendments on 2026-11-16; see [approval evidence](spec/approval-v0.1.1.md). This is prototype approval, not teacher approval or production certification.
 
+**INC-01** adds client registration and display-name editing. From the login screen select **Zaregistrujte sa**, create a fictional account, then sign in manually. Use **Môj profil** to change the display name. A new client can view the schedule immediately and needs an active membership to book. See [DEC-C08 and the account interface](spec/inc-01-client-account.md) and [INC-01 validation](reports/validation-inc-01.md).
+
 ## Spustenie vo Windows PowerShell
 
 Tested with **Python 3.13.7** on Windows and the exact resolved package versions in `requirements.txt`. Python 3.13 is recommended for reproducing this tested environment. No Node build, database server, cloud account or API key is required. Use a browser with JavaScript enabled.
@@ -33,6 +35,14 @@ All passwords are **`Demo123!`**. These are fictional local accounts only.
 ### Dáta, reštart a reset
 
 The SQLite database is `prototype/runtime/booking.sqlite3`, with WAL sidecar files while running. Runtime files, sessions and `.venv` are ignored by `prototype/.gitignore`; do not commit or share them. Database initialization is explicit: the server never seeds or resets automatically. Repeating `python -m app.seed` preserves existing data and the original saved training dates. Future dates are relative to the original seed timestamp, so reset old demo data before a later presentation.
+
+For an existing v0.1.1 database, stop the server and run the explicit upgrade from `prototype/`. It preserves accounts, sessions and bookings. Fresh initialization already uses the current schema.
+
+```powershell
+& .\.venv\Scripts\python.exe -m app.migrate
+```
+
+Use `--db <path>` with the same database selected for the application if you run against a separate file.
 
 Stop the server first. This command explicitly replaces only the recognized fictional demo data and invalidates its sessions:
 
@@ -68,7 +78,7 @@ See [DEMO.md](DEMO.md) for the Slovak five-minute walkthrough and [validation ev
 - A write transaction acquires SQLite's `BEGIN IMMEDIATE` lock with a bounded five-second busy/retry window. Membership, training time, duplicate and occupancy checks share that transaction. Time is refreshed after waits/retries and immediately before the write; a partial unique index additionally protects confirmed duplicates.
 - Booking POSTs are never automatically retried. An uncertain result reloads authoritative reservations and availability; failed reconciliation disables further booking until a successful refresh. After cancellation, a delayed old POST may create a new booking: this accepted limitation is not a generic idempotency system.
 - Only confirmed bookings consume seats. Cancellation keeps history; rebooking uses a new ID, and old DELETE requests cannot cancel it. Past records do not automatically transition to completed.
-- Memberships and schedule are fixtures, not administration or activation flows. Payments, notification delivery, registration, native mobile, deployment, comprehensive audit tooling and production security are excluded. Loopback HTTP cookies are intentionally not a production TLS configuration. No formal SLA, load, accessibility or external security certification is claimed.
+- Memberships and schedule are fixtures. Payments, notification delivery, staff administration, native mobile and public deployment are outside the current increment. The browser sessions use the loopback HTTP configuration. Formal SLA, load, accessibility and external security checks remain unverified.
 
 ## Original compact handoff context
 

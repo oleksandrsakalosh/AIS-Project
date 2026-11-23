@@ -5,18 +5,22 @@ import sqlite3
 from typing import Annotated
 
 from fastapi import FastAPI, Request, Response, Path as PathField
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import auth, booking, membership, schedule
+from . import accounts, auth, booking, membership, schedule
 from .db import Database, DEFAULT_DB, utc_now
 from .errors import BusinessError, error_body
 from .models import (BookingInput, LoginInput, TrainingList, MembershipResponse,
-                     ReservationList, MutationResult)
+                     ReservationList, MutationResult, RegistrationInput, ProfileUpdate, ProfileView)
 
 HERE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
+REGISTRATION = "/api/account/registration"
+PROFILE = "/api/account/profile"
 
 
 def create_app(db_path=None, clock=utc_now):
@@ -27,10 +31,11 @@ def create_app(db_path=None, clock=utc_now):
     @application.middleware("http")
     async def access_boundary(request, call_next):
         path, method = request.url.path, request.method
-        protected = path in ("/trainings", "/memberships/current", "/reservations") or path.startswith("/reservations/")
+        protected = path in ("/trainings", "/memberships/current", "/reservations", PROFILE) or path.startswith("/reservations/")
+        signup = path == REGISTRATION and method == "POST"
         session_endpoint = path in ("/login", "/logout") and method == "POST"
         try:
-            if protected or session_endpoint:
+            if protected or session_endpoint or signup:
                 context = auth.current_session(application.state.db, request.cookies.get(auth.COOKIE))
                 request.state.session = context
                 user = auth.user_summary(context)
@@ -39,6 +44,8 @@ def create_app(db_path=None, clock=utc_now):
                     return JSONResponse(error_body("unauthorized"), status_code=401)
                 if protected and path != "/trainings" and user["role"] != "client":
                     return JSONResponse(error_body("forbidden"), status_code=403)
+                if signup and user is not None:
+                    return JSONResponse(error_body("already_signed_in"), status_code=403)
                 if method not in ("GET", "HEAD", "OPTIONS") and not auth.valid_csrf(context, request.headers.get("X-CSRF-Token")):
                     return JSONResponse(error_body("csrf_invalid"), status_code=403)
             response = await call_next(request)
@@ -55,6 +62,13 @@ def create_app(db_path=None, clock=utc_now):
     @application.exception_handler(BusinessError)
     async def business_error(request, exc):
         return JSONResponse(error_body(exc.code), status_code=exc.status)
+
+    @application.exception_handler(RequestValidationError)
+    async def validation_error(request, exc):
+        if request.url.path in (REGISTRATION, PROFILE):
+            # FastAPI's default validation response can include submitted values.
+            return JSONResponse(error_body("validation"), status_code=422)
+        return await request_validation_exception_handler(request, exc)
 
     @application.exception_handler(Exception)
     async def unexpected_error(request, exc):
@@ -88,6 +102,19 @@ def create_app(db_path=None, clock=utc_now):
         response = Response(status_code=204)
         response.delete_cookie(auth.COOKIE, path="/", httponly=True, samesite="strict")
         return response
+
+    @application.post(REGISTRATION, status_code=201, include_in_schema=False)
+    def register(data: RegistrationInput):
+        accounts.register(application.state.db, data.username, data.password, data.display_name)
+        return {"username": data.username}
+
+    @application.get(PROFILE, response_model=ProfileView, include_in_schema=False)
+    def get_profile(request: Request):
+        return accounts.profile(application.state.db, request.state.user)
+
+    @application.put(PROFILE, response_model=ProfileView, include_in_schema=False)
+    def update_profile(data: ProfileUpdate, request: Request):
+        return accounts.update_display_name(application.state.db, request.state.user, data.display_name)
 
     @application.get("/trainings", response_model=TrainingList)
     def get_trainings(request: Request):
@@ -131,6 +158,18 @@ def create_app(db_path=None, clock=utc_now):
     @application.get("/login", include_in_schema=False)
     def login_page(request: Request):
         return templates.TemplateResponse(request=request, name="login.html", context={"user": None, "page": "login"})
+
+    @application.get("/register", include_in_schema=False)
+    def registration_page(request: Request):
+        session = auth.current_session(application.state.db, request.cookies.get(auth.COOKIE))
+        user = auth.user_summary(session)
+        if user:
+            return RedirectResponse("/schedule" if user["role"] == "client" else "/staff", status_code=303)
+        return templates.TemplateResponse(request=request, name="register.html", context={"user": None, "page": "register"})
+
+    @application.get("/profile", include_in_schema=False)
+    def profile_page(request: Request):
+        return page(request, "profile", client_only=True)
 
     @application.get("/schedule", include_in_schema=False)
     def schedule_page(request: Request):

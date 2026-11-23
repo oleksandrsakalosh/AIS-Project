@@ -4,7 +4,8 @@ CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('client','trainer'))
+    role TEXT NOT NULL CHECK (role IN ('client','trainer')),
+    display_name TEXT
 );
 CREATE TABLE memberships (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

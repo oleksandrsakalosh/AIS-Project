@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Môj profil{% endblock %}
+{% block content %}
+<section class="login-panel account-panel" aria-labelledby="profile-title">
+  <h1 id="profile-title">Môj profil</h1>
+  <p>Používateľské meno <strong id="profile-username">{{ user.username }}</strong></p>
+  <form id="profile-form" method="post" action="/profile">
+    <label for="display-name">Zobrazované meno</label>
+    <input id="display-name" name="display_name" autocomplete="nickname" aria-describedby="name-help" required disabled>
+    <small id="name-help">1 až 80 znakov.</small>
+    <button class="button button-primary" type="submit" disabled>Uložiť meno</button>
+  </form>
+</section>
+{% endblock %}

@@ -3,3 +3,41 @@
 @media(min-width:1200px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}.training-card{padding:23px}.card-top{align-items:flex-start;flex-direction:column;gap:11px}.training-time{margin-top:22px}}
 @media(max-width:850px){.header-inner{gap:24px;flex-wrap:wrap}.header-inner nav{margin-left:0}.account{gap:12px}.login-grid{gap:35px}.login-story h1{font-size:54px}.login-panel{padding:28px}.card-top{align-items:flex-start;flex-direction:column}.heading-note{display:none}h1{font-size:48px}.page-heading{padding-top:40px}.brand{font-size:24px}}
 @media(max-width:600px){.container{padding-left:20px;padding-right:20px}.header-inner{padding:18px 20px;gap:18px}.brand{font-size:23px}.brand-mark{width:38px;height:38px;font-size:28px}.brand-sub{font-size:7px}.header-inner nav{order:3;width:100%;gap:26px}.account{margin-left:auto;gap:10px}.account-name{font-size:12px}.button-quiet{padding:9px;min-height:38px;font-size:11px}.header-note{display:none}.page-heading{align-items:flex-start;flex-direction:column;padding:36px 0 24px}.eyebrow{font-size:10px;letter-spacing:2px;margin-bottom:14px}h1{font-size:41px;letter-spacing:-1.7px}.page-heading p:not(.eyebrow){font-size:14px}.toolbar{align-items:flex-start;flex-direction:column;gap:14px;margin-bottom:28px}.toolbar .button{align-self:flex-end}.toolbar>p{margin:0}.cards{grid-template-columns:minmax(0,1fr);gap:16px}.card-top{flex-direction:row;align-items:center}.training-card{padding:23px}.section-heading{align-items:flex-start}.section-heading h2{font-size:19px}.section-heading>.muted{font-size:11px;text-align:right}.footer{flex-direction:column;gap:12px;margin-top:38px}.login-grid{grid-template-columns:minmax(0,1fr);gap:26px;padding-top:34px}.login-story h1{font-size:44px;letter-spacing:-2px}.login-story .lead{font-size:14px;margin:18px 0 0}.movement-art{display:none}.login-panel{padding:26px}.login-panel h2{font-size:27px}.reservation-row{flex-direction:column;padding:23px}.reservation-side{align-items:flex-start}.reservation-side .button{width:100%}.reservation-side .pill{white-space:normal;line-height:1.5}.staff-panel{margin:35px 0 60px;padding:26px}.message{font-size:13px}.training-time{margin-top:22px}}
+/* Registration and profile */
+.account-panel {
+  max-width: 560px;
+  margin: 36px auto;
+}
+.account-panel h1 {
+  font-size: clamp(32px, 5vw, 46px);
+  margin: 0 0 14px;
+}
+.account-panel input {
+  margin-bottom: 4px;
+}
+.account-panel form small {
+  display: block;
+  margin-bottom: 18px;
+  color: var(--muted);
+}
+.account-panel p:last-child {
+  margin: 18px 0 0;
+}
+.account-link {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.header-inner nav {
+  flex-wrap: wrap;
+}
+.account {
+  min-width: 0;
+  max-width: 100%;
+}
+.account-name,
+#profile-username {
+  overflow-wrap: anywhere;
+}
+.account .button-quiet {
+  flex-shrink: 0;
+}

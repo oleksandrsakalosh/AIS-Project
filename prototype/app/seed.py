@@ -6,6 +6,7 @@ import sqlite3
 
 from .auth import hash_password
 from .db import DEFAULT_DB, utc_now, stamp
+from .migrate import SCHEMA_VERSION
 
 
 def initialize(path=DEFAULT_DB, *, reset=False, now=None):
@@ -29,7 +30,7 @@ def initialize(path=DEFAULT_DB, *, reset=False, now=None):
         connection.executescript((Path(__file__).with_name("schema.sql")).read_text(encoding="utf-8"))
         connection.execute("INSERT INTO metadata VALUES ('application','POC-BOOKING')")
         connection.execute("INSERT INTO metadata VALUES ('seeded_at',?)", (stamp(now),))
-        connection.execute("INSERT INTO metadata VALUES ('schema_version','0.1.1')")
+        connection.execute("INSERT INTO metadata VALUES ('schema_version',?)", (SCHEMA_VERSION,))
         password_hash = hash_password("Demo123!")
         connection.executemany("INSERT INTO users(id,username,password_hash,role) VALUES (?,?,?,?)", [
             (1, "anna", password_hash, "client"), (2, "boris", password_hash, "client"),

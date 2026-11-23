@@ -28,6 +28,8 @@ Otvorte http://127.0.0.1:8000. Heslo všetkých účtov je `Demo123!`. Reset zru
 
 ## Dôkazy mimo päťminútovej prezentácie
 
+**INC-01 · Registrácia a profil.** Na prihlasovacej stránke vyberte **Zaregistrujte sa**. Vytvorte si fiktívny účet s jedinečným používateľským menom, zobrazovaným menom a heslom s aspoň 12 znakmi. Prejdite na prihlásenie a prihláste sa ručne. V rozvrhu sa zobrazí **Nemáte evidované členstvo** a rezervovanie nebude dostupné. Otvorte **Môj profil**, uložte nové zobrazované meno a obnovte stránku. Používateľské meno aj uložené zobrazované meno zostanú viditeľné.
+
 Zachovanie dát možno overiť zastavením a opätovným spustením servera bez resetu. Súbeh posledného miesta overujú automatické testy s nezávislými požiadavkami; rýchle klikanie v jednom prehliadači ho nedokazuje.
 
 ```powershell

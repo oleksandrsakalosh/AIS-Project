@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Registrácia{% endblock %}
+{% block content %}
+<section class="login-panel account-panel" aria-labelledby="register-title">
+  <h1 id="register-title">Vytvoriť účet</h1>
+  <p>Po registrácii sa prihláste. Na rezerváciu tréningu potrebujete aktívne členstvo.</p>
+  <form id="registration-form" method="post" action="/api/account/registration">
+    <label for="username">Používateľské meno</label>
+    <input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" aria-describedby="username-help" minlength="3" maxlength="32" required>
+    <small id="username-help">3 až 32 znakov. Začnite malým písmenom bez diakritiky alebo číslicou. Ďalej môžete použiť aj bodku, podčiarkovník a pomlčku.</small>
+    <label for="display-name">Zobrazované meno</label>
+    <input id="display-name" name="display_name" autocomplete="nickname" aria-describedby="name-help" required>
+    <small id="name-help">1 až 80 znakov.</small>
+    <label for="password">Heslo</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" aria-describedby="password-help" required>
+    <small id="password-help">12 až 128 znakov.</small>
+    <button class="button button-primary" type="submit" disabled>Vytvoriť účet</button>
+  </form>
+  <p><a class="account-link" href="/login">Prejsť na prihlásenie</a></p>
+</section>
+{% endblock %}

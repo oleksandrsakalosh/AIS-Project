@@ -1,5 +1,7 @@
 from typing import Annotated, Literal
-from pydantic import BaseModel, ConfigDict, Field
+from unicodedata import category
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 PositiveID = Annotated[int, Field(strict=True, gt=0)]
 
@@ -8,6 +10,31 @@ class LoginInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     username: Annotated[str, Field(min_length=1, max_length=80, strict=True)]
     password: Annotated[str, Field(min_length=1, max_length=256, strict=True)]
+
+
+class ProfileUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    display_name: Annotated[str, Field(strict=True)]
+
+    @field_validator("display_name")
+    @classmethod
+    def valid_name(cls, value):
+        name = value.strip()
+        if not 1 <= len(name) <= 80 or any(category(char) in ("Cc", "Cs") for char in value):
+            raise ValueError("Enter a display name of 1–80 characters without control characters.")
+        return name
+
+
+class RegistrationInput(ProfileUpdate):
+    username: Annotated[str, Field(min_length=3, max_length=32, pattern=r"^[a-z0-9][a-z0-9._-]*$", strict=True)]
+    password: Annotated[str, Field(min_length=12, max_length=128, strict=True)]
+
+
+class ProfileView(BaseModel):
+    id: PositiveID
+    username: str
+    role: Literal["client"]
+    display_name: str
 
 
 class BookingInput(BaseModel):

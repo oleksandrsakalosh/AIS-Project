@@ -1,0 +1,103 @@
+# Candidate replacement for prototype/spec/manifest.yaml. Status: proposed.
+# Paths are relative to the AIS workspace root after adoption.
+specification:
+  id: "POC-BOOKING"
+  version: "0.1.1"
+  status: "approved"
+  selected_scope: "Booking demo selected by the user on 2026-11-16"
+  approved_by: "User, explicit conversation instruction on 2026-11-16"
+  approval_evidence: "prototype/spec/approval-v0.1.1.md"
+  approval_scope: "Local POC only. DEC-P01–DEC-P08 and seven review amendments."
+  architecture_baseline: "Supplied EA exports. Native model, verified baseline label and human match confirmation unavailable."
+  workflow: "Compact student SDD adaptation"
+
+paths:
+  source_paths_relative_to: "AIS workspace root (parent of prototype/)"
+  implementation_root: "prototype/"
+  instructions: "prototype/AGENTS.md"
+  specification: "prototype/spec/prototype.md"
+  handoff: "prototype/README.md"
+  prompts: "prototype/CODEX_PROMPTS.md"
+
+contract:
+  id: "POC-BOOKING-API"
+  version: "0.1.1"
+  status: "approved"
+  location: "prototype/spec/prototype.md#6-approved-api-contract"
+  approval_evidence: "prototype/spec/approval-v0.1.1.md"
+  generated_reference: "prototype/spec/openapi.generated.json"
+
+course_project:
+  status: "proposed"
+  checked_on: "2026-11-23"
+  preserves_booking_baseline: "POC-BOOKING v0.1.1 / POC-BOOKING-API v0.1.1"
+  preparation: "prototype/spec/drafts/course-project-preparation.md"
+  baseline_report: "prototype/reports/baseline-2026-11-23.md"
+  instructions_proposal: "prototype/spec/drafts/AGENTS.proposed.md"
+  delivery: "Local Slovak responsive web application with simulated payments and in-app notifications"
+  excluded: ["public deployment", "live payments", "external messaging", "native mobile"]
+  first_increment:
+    id: "INC-01"
+    specification_version: "0.1.0"
+    status: "proposed"
+    requirements: ["R-01", "R-07 access subset"]
+    specification: "prototype/spec/drafts/increment-01-client-registration.md"
+    open_decisions: ["DEC-C08"]
+    next_mode: "DESIGN_CONTRACT"
+    proposed_contract_output: "prototype/spec/drafts/increment-01-client-account-http-v0.1.0.md"
+    approval_evidence: null
+  accepted_increment_artifacts: []
+
+project_sources:
+  - path: "docs/Informačný_systém_pre_správu_športového_centra.pdf"
+    use: "pp. 2–5 and 11–21 for goals, scope, responsibilities, R-01–R-08, invariants, example contracts and ADRs"
+  - path: "docs/GAP_Analysis_IS_sportoveho_centra.pdf"
+    use: "pp. 1–6 for Gap A, Gap B, dependency order and gaps in the model"
+
+architecture_views:
+  review_status: "Supplied PNGs inspected on 2026-11-23. Current EA baseline and match confirmation unavailable."
+  files:
+    - "diagrams/PNG/01_Application_Cooperation_Viewpoint.png"
+    - "diagrams/PNG/02_Application_Structure_Viewpoint.png"
+    - "diagrams/PNG/03_Application_Usage_Viewpoint.png"
+    - "diagrams/PNG/07_Implementation_and_Migration_Viewpoint.png"
+    - "diagrams/PNG/08_Information_Structure_Viewpoint.png"
+    - "diagrams/PNG/11_Layered_Viewpoint.png"
+    - "diagrams/PNG/14_Organization_Viewpoint.png"
+    - "diagrams/PNG/16_Requirements_Realization_Viewpoint.png"
+    - "diagrams/PNG/17_Service_Realization_Viewpoint.png"
+    - "diagrams/PNG/20_Technology_Usage_Viewpoint.png"
+
+method_references:
+  - "course_resources/SDD_framework_pre_studentov_v4.pdf"
+  - "course_resources/SDD_AI_RULES_v4.pdf"
+  - "course_resources/SDD_PROJECT_TEMPLATE_v4.pdf"
+
+method_reference_review:
+  checked_on: "2026-11-23"
+  availability: "All three PDFs present in the workspace and tracked archives"
+  sections: "Framework pp. 2–3, 8–9, 12–15, 18. AI Rules pp. 1–7. Project Template pp. 1–5, 12–16."
+  authority: "Method references for compact student SDD. Example requirements, approval records and infrastructure have no project authority."
+
+source_availability:
+  archive_member_rule: "Remove the first path segment. Use the remainder as the member path inside the archive."
+  archives:
+    docs: "docs/docs.zip"
+    diagrams: "diagrams/diagrams.zip"
+    course_resources: "course_resources/course_resources.zip"
+  verification: "Each listed source has a loose copy matching its archive member as of 2026-11-23. Fresh clones track the archives."
+
+excluded_as_implementation_authority:
+  - "FPA and COCOMO planning estimates"
+  - "Gantt planning context"
+  - "Unrelated examples and sample approvals inside the teacher PDFs"
+
+implementation_outputs:
+  - "prototype/app/"
+  - "prototype/tests/"
+  - "prototype/requirements.txt"
+  - "prototype/README.md"
+  - "prototype/DEMO.md"
+  - "prototype/reports/validation.md"
+  - "prototype/reports/implementation-plan.md"
+  - "prototype/spec/openapi.generated.json"

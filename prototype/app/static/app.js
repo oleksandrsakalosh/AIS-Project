@@ -5,6 +5,8 @@ let user, csrf, snapshot, busy = false, reconciled = false;
 const $ = selector => document.querySelector(selector);
 const messages = {
   invalid_credentials: 'Meno alebo heslo nie je správne.',
+  username_taken: 'Toto používateľské meno sa už používa.',
+  already_signed_in: 'Už ste prihlásení.',
   unauthorized: 'Prihlásenie vypršalo. Prihláste sa znova.',
   forbidden: 'Na túto operáciu nemáte oprávnenie.',
   csrf_invalid: 'Bezpečnostný token vypršal. Obnovte stránku a skúste znova.',
@@ -145,10 +147,70 @@ async function mutate(method, path, body) {
   else notice(method === 'POST' ? 'Miesto je vaše. Rezervácia bola potvrdená.' : 'Rezervácia je zrušená. Miesto sme uvoľnili.');
 }
 
+function setupRegistration() {
+  const form = $('#registration-form');
+  const button = form.querySelector('button');
+  const password = $('#password');
+  button.disabled = false;
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+      await api('/api/account/registration', {method: 'POST', body: JSON.stringify({
+        username: $('#username').value, display_name: $('#display-name').value, password: password.value
+      })});
+      form.hidden = true;
+      notice('Účet je vytvorený. Prihláste sa zvoleným menom a heslom.');
+      form.nextElementSibling.querySelector('a').focus();
+    } catch (error) {
+      if (error.code === 'network') {
+        notice('Výsledok registrácie sa nepodarilo overiť. Skúste sa prihlásiť zvoleným menom a heslom.', true);
+      } else {
+        notice(messages[error.code] || messages.internal_error, true);
+        button.disabled = false;
+      }
+    } finally {
+      password.value = '';
+    }
+  });
+}
+
+async function setupProfile() {
+  const form = $('#profile-form');
+  const button = form.querySelector('button');
+  const name = $('#display-name');
+  const profile = await api('/api/account/profile');
+  name.value = profile.display_name;
+  name.disabled = false;
+  button.disabled = false;
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (button.disabled) return;
+    button.disabled = true;
+    name.readOnly = true;
+    try {
+      const updated = await api('/api/account/profile', {method: 'PUT', body: JSON.stringify({display_name: name.value})});
+      name.value = updated.display_name;
+      notice('Zobrazované meno bolo uložené.');
+    } catch (error) {
+      const uncertain = 'Výsledok uloženia sa nepodarilo overiť. Obnovte stránku a skontrolujte uložené meno.';
+      notice(error.code === 'network' ? uncertain : messages[error.code] || messages.internal_error, true);
+    } finally {
+      name.readOnly = false;
+      button.disabled = false;
+    }
+  });
+}
+
 async function boot() {
   try {
     const session = await api('/session');
     user = session.user; csrf = session.csrf_token;
+    if (page === 'register') {
+      setupRegistration();
+      return;
+    }
     if (page === 'login') {
       $('#login-submit').disabled = false;
       $('#login-submit').textContent = 'Prihlásiť sa ↗';
@@ -168,6 +230,10 @@ async function boot() {
       try { await api('/logout', {method: 'POST'}); window.location.assign('/login'); }
       catch (error) { notice(messages[error.code] || messages.internal_error, true); $('#logout').disabled = false; }
     });
+    if (page === 'profile') {
+      await setupProfile();
+      return;
+    }
     if ($('#refresh')) $('#refresh').addEventListener('click', async () => {
       if (busy) return;
       busy = true; $('#refresh').disabled = true;
@@ -176,7 +242,13 @@ async function boot() {
       finally { busy = false; $('#refresh').disabled = false; render(); }
     });
     if (page !== 'staff') await refresh();
-  } catch (error) { notice(messages[error.code] || messages.internal_error, true); }
+  } catch (error) {
+    const accountPage = page === 'register' || page === 'profile';
+    const message = accountPage && error.code === 'network'
+      ? 'Stránku sa nepodarilo načítať. Obnovte ju a skúste znova.'
+      : messages[error.code] || messages.internal_error;
+    notice(message, true);
+  }
 }
 
 boot();
