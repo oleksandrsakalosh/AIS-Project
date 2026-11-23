@@ -1,4 +1,5 @@
 import {submitOnce} from './mutations.mjs';
+import {clearCatalogRecovery, setupCatalog} from './catalog.mjs';
 
 const page = document.body.dataset.page;
 let user, csrf, snapshot, busy = false, reconciled = false;
@@ -32,6 +33,7 @@ const roleLabels = {client: 'Klient', trainer: 'Tréner', reception: 'Recepcia',
 const statusLabels = {active: 'Aktívny', disabled: 'Deaktivovaný'};
 
 function signIn() {
+  clearCatalogRecovery();
   user = csrf = snapshot = null;
   $('#main').replaceChildren($('#message'));
   $('.account')?.remove();
@@ -364,6 +366,7 @@ async function boot() {
   try {
     const session = await api('/session');
     user = session.user; csrf = session.csrf_token;
+    if (user?.role !== 'admin') clearCatalogRecovery();
     if (page === 'register') {
       setupRegistration();
       return;
@@ -376,6 +379,7 @@ async function boot() {
         const button = $('#login-submit'); button.disabled = true; button.textContent = 'Prihlasujem…';
         try {
           const result = await api('/login', {method: 'POST', body: JSON.stringify({username: $('#username').value, password: $('#password').value})});
+          if (result.user.id !== user?.id) clearCatalogRecovery();
           window.location.assign(result.user.role === 'client' ? '/schedule' : '/staff');
         } catch (error) { notice(messages[error.code] || messages.internal_error, true); button.disabled = false; button.textContent = 'Prihlásiť sa ↗'; }
       });
@@ -384,7 +388,11 @@ async function boot() {
     if (!user) { signIn(); return; }
     $('#logout').addEventListener('click', async () => {
       $('#logout').disabled = true;
-      try { await api('/logout', {method: 'POST'}); window.location.assign('/login'); }
+      try {
+        await api('/logout', {method: 'POST'});
+        clearCatalogRecovery();
+        window.location.assign('/login');
+      }
       catch (error) {
         if (error.code === 'csrf_invalid') {
           try {
@@ -400,6 +408,10 @@ async function boot() {
     }
     if (page === 'admin') {
       await setupAdmin();
+      return;
+    }
+    if (page === 'catalog') {
+      await setupCatalog({adminId: user.id, api, element, notice, messages});
       return;
     }
     const refreshButton = $('#refresh');

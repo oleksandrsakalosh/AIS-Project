@@ -14,7 +14,7 @@ from app.main import create_app
 from app.migrate import SCHEMA_VERSION, upgrade
 from app.models import RegistrationInput
 from app.seed import initialize
-from conftest import book, code, count
+from conftest import book, code, count, remove_inc03_schema
 from test_accounts import login
 
 
@@ -356,6 +356,7 @@ def test_SC_A11_migration_and_reset(demo, tmp_path):
             source.backup(legacy)
     path = tmp_path / "legacy.sqlite3"
     with closing(sqlite3.connect(path)) as conn, conn:
+        remove_inc03_schema(conn)
         rows = conn.execute("SELECT id, username, password_hash, role, display_name FROM users").fetchall()
         conn.execute("DROP TABLE users")
         conn.execute(legacy_users)
@@ -380,6 +381,7 @@ def test_SC_A11_migration_and_reset(demo, tmp_path):
 
 def test_SC_A11_failed_upgrade_rolls_back(demo):
     with closing(sqlite3.connect(demo.path)) as conn, conn:
+        remove_inc03_schema(conn)
         conn.execute("ALTER TABLE users DROP COLUMN display_name")
         conn.execute("UPDATE metadata SET value='0.1.1' WHERE key='schema_version'")
         conn.execute("UPDATE reservations SET user_id=999 WHERE id=1")

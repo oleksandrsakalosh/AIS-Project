@@ -50,7 +50,7 @@ INC-05 can proceed after INC-01 while staff features progress. Carry Slovak labe
 
 ## Decisions for the user
 
-DEC-C08 is confirmed in the [INC-01 decision record](../inc-01-client-account.md). DEC-C01 and DEC-C09 are confirmed in the [INC-02 approval](increment-02-account-administration-http-v0.1.0.md#7-approval-and-decisions). DEC-C02–07 remain open for their dependent contracts.
+DEC-C08 is confirmed in the [INC-01 decision record](../inc-01-client-account.md). DEC-C01 and DEC-C09 are confirmed in the [INC-02 approval](increment-02-account-administration-http-v0.1.0.md#7-approval-and-decisions). DEC-C02 and catalog decisions DEC-C10–12 are confirmed in the [INC-03 approval](increment-03-catalog-administration-http-v0.1.0.md#7-approval), which protects every future assignment, including empty classes. DEC-C03–07 remain open for their dependent contracts.
 
 | Decision | What the sources leave open and the recommended answer | Consequences |
 | --- | --- | --- |

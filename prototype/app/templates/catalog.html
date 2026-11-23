@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Katalóg centra{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <h1>Katalóg centra</h1>
+  <a class="button button-outline" href="/staff">Zamestnanecký portál</a>
+</div>
+<div id="catalog" class="admin-grid">
+  <section class="login-panel admin-create" aria-labelledby="catalog-create-title">
+    <label for="catalog-kind">Katalóg</label>
+    <select id="catalog-kind" disabled>
+      <option value="trainers">Tréneri</option>
+      <option value="activities">Aktivity</option>
+      <option value="rooms">Športové priestory</option>
+    </select>
+    <h2 id="catalog-create-title">Pridať položku</h2>
+    <form id="catalog-create">
+      <fieldset disabled>
+        <label for="catalog-name">Názov</label>
+        <input id="catalog-name" name="name" required>
+        <button class="button button-primary" type="submit">Pridať položku</button>
+      </fieldset>
+    </form>
+  </section>
+  <section aria-labelledby="catalog-title">
+    <div class="section-heading admin-list-heading catalog-heading">
+      <h2 id="catalog-title">Tréneri</h2>
+      <button class="button button-outline" type="button" id="catalog-refresh" disabled>Obnoviť údaje</button>
+    </div>
+    <p id="catalog-picker-error" class="muted" role="status" hidden>Účty sa nepodarilo načítať. Obnovte údaje, aby ste mohli vybrať účet.</p>
+    <div id="catalog-list" class="admin-list" aria-busy="true">
+      <p class="empty">Načítavam katalóg…</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

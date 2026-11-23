@@ -57,3 +57,13 @@ def book(client, training=1, user=1):
 def count(demo, training=1):
     with demo.db.transaction() as conn:
         return conn.execute("SELECT COUNT(*) FROM reservations WHERE training_id=? AND status='confirmed'", (training,)).fetchone()[0]
+
+
+def remove_inc03_schema(conn):
+    """Restore the legacy catalog schema in a disposable migration fixture."""
+    conn.execute("DROP TABLE catalog_creates")
+    conn.execute("DROP INDEX one_trainer_per_account")
+    conn.execute("ALTER TABLE trainers DROP COLUMN account_id")
+    for table in ("trainers", "activities", "rooms"):
+        conn.execute(f"ALTER TABLE {table} DROP COLUMN status")
+        conn.execute(f"ALTER TABLE {table} DROP COLUMN version")

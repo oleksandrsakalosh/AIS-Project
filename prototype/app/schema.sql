@@ -17,9 +17,34 @@ CREATE TABLE memberships (
     valid_from TEXT NOT NULL,
     valid_until TEXT NOT NULL CHECK (valid_until > valid_from)
 );
-CREATE TABLE activities (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
-CREATE TABLE trainers (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
-CREATE TABLE rooms (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE activities (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive')),
+    version INTEGER NOT NULL DEFAULT 1 CHECK (version BETWEEN 1 AND 9007199254740991)
+);
+CREATE TABLE trainers (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive')),
+    version INTEGER NOT NULL DEFAULT 1 CHECK (version BETWEEN 1 AND 9007199254740991),
+    account_id INTEGER REFERENCES users(id)
+);
+CREATE UNIQUE INDEX one_trainer_per_account ON trainers(account_id) WHERE account_id IS NOT NULL;
+CREATE TABLE rooms (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive')),
+    version INTEGER NOT NULL DEFAULT 1 CHECK (version BETWEEN 1 AND 9007199254740991)
+);
+CREATE TABLE catalog_creates (
+    admin_account_id INTEGER NOT NULL REFERENCES users(id),
+    kind TEXT NOT NULL CHECK (kind IN ('trainers','activities','rooms')),
+    request_id TEXT NOT NULL,
+    entry_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    PRIMARY KEY (admin_account_id, kind, request_id)
+);
 CREATE TABLE trainings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     activity_id INTEGER NOT NULL REFERENCES activities(id),

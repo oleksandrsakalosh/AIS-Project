@@ -42,6 +42,17 @@ local_increments:
     decisions: ["DEC-C01", "DEC-C09"]
     approval_evidence: "User confirmation and IMPLEMENT_CHANGE authorization on 2026-11-23, recorded in contract section 7"
     validation: "prototype/reports/validation-inc-02.md"
+  - id: "INC-03"
+    requirements: ["R-05", "CP-02", "R-07 trainer link and assignment guard"]
+    status: "implemented"
+    contract:
+      id: "INC-03-CATALOG-ADMIN-HTTP"
+      version: "0.1.0"
+      status: "approved"
+      location: "prototype/spec/drafts/increment-03-catalog-administration-http-v0.1.0.md"
+    decisions: ["DEC-C02", "DEC-C10", "DEC-C11", "DEC-C12"]
+    approval_evidence: "User confirmation and IMPLEMENT_CHANGE authorization on 2026-11-23, recorded in contract section 7"
+    validation: "prototype/reports/validation-inc-03.md"
 
 project_sources:
   - path: "docs/Informačný_systém_pre_správu_športového_centra.pdf"

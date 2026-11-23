@@ -6,6 +6,8 @@ Working local proof of concept for **POC-BOOKING specification v0.1.1** and **PO
 
 **INC-02** adds account administration and read-only reception access. Bootstrap the first administrator locally, then sign in and open **Účty** to provision staff, change staff roles and deactivate or reactivate accounts. See the [approved INC-02 contract](spec/drafts/increment-02-account-administration-http-v0.1.0.md) and [INC-02 validation](reports/validation-inc-02.md).
 
+**INC-03** adds **Katalóg** to the administrator’s staff portal. Manage trainers, activities and rooms there. Use **Prepojenie účtu** on a trainer record to link an active Trainer login explicitly. Future classes protect their catalog references and existing trainer links. Catalog renames appear on the schedule and in reservation history. [Approved INC-03 contract](spec/drafts/increment-03-catalog-administration-http-v0.1.0.md) · [INC-03 validation](reports/validation-inc-03.md)
+
 ## Spustenie vo Windows PowerShell
 
 Tested with **Python 3.13.7** on Windows and the exact resolved package versions in `requirements.txt`. Python 3.13 is recommended for reproducing this tested environment. No Node build, database server, cloud account or API key is required. Use a browser with JavaScript enabled.
@@ -40,7 +42,7 @@ The seeded accounts below use **`Demo123!`**. For staff administration, run `app
 
 The SQLite database is `prototype/runtime/booking.sqlite3`, with WAL sidecar files while running. Runtime files, sessions and `.venv` are ignored by `prototype/.gitignore`; do not commit or share them. Database initialization is explicit: the server never seeds or resets automatically. Repeating `python -m app.seed` preserves existing data and the original saved training dates. Future dates are relative to the original seed timestamp, so reset old demo data before a later presentation.
 
-For an existing database at schema 0.1.1 or 0.2.0, stop the server and run the explicit upgrade to 0.3.0 from `prototype/`. It preserves accounts, eligible sessions and bookings. Fresh initialization already uses 0.3.0.
+For an existing database at schema 0.1.1, 0.2.0 or 0.3.0, stop the server and run the explicit upgrade to 0.4.0 from `prototype/`. It preserves accounts, eligible sessions, bookings and catalog references. Existing catalog rows become active, and trainers start unlinked for the administrator to assign explicitly. Fresh initialization uses 0.4.0.
 
 ```powershell
 & .\.venv\Scripts\python.exe -m app.migrate
@@ -63,7 +65,7 @@ Reload the browser and sign in again after reset. `--db <path>` is available for
 Run from `prototype/`:
 
 ```powershell
-& .\.venv\Scripts\python.exe -m pytest -q
+& .\.venv\Scripts\python.exe -m pytest -q tests
 & .\.venv\Scripts\python.exe -m pip check
 & .\.venv\Scripts\python.exe -m compileall -q app tests
 ```
@@ -74,7 +76,7 @@ The optional JavaScript mutation tests use Node's built-in test runner (no npm p
 node --test tests/mutations.test.mjs
 ```
 
-See [DEMO.md](DEMO.md) for the Slovak walkthrough, [booking validation](reports/validation.md) and [INC-02 validation](reports/validation-inc-02.md) for exact results. The live API schema at `/openapi.json` and `/docs` reports version 0.2.0 and includes the admin routes and expanded session roles. `spec/openapi.generated.json` records the original 0.1.1 booking API. The textual [booking contract](spec/prototype.md#6-approved-api-contract) and [INC-02 contract](spec/drafts/increment-02-account-administration-http-v0.1.0.md) govern behavior.
+See [DEMO.md](DEMO.md) for the Slovak walkthrough and the linked validation reports for results. The live API schema at `/openapi.json` and `/docs` reports version 0.3.0 with the account and catalog admin routes. `spec/openapi.generated.json` records the original 0.1.1 booking API. The versioned contracts govern behavior. [Booking contract](spec/prototype.md#6-approved-api-contract) · [INC-02 contract](spec/drafts/increment-02-account-administration-http-v0.1.0.md) · [INC-03 contract](spec/drafts/increment-03-catalog-administration-http-v0.1.0.md)
 
 ### Implementation notes and limits
 
@@ -83,7 +85,7 @@ See [DEMO.md](DEMO.md) for the Slovak walkthrough, [booking validation](reports/
 - A write transaction acquires SQLite's `BEGIN IMMEDIATE` lock with a bounded five-second busy/retry window. Membership, training time, duplicate and occupancy checks share that transaction. Time is refreshed after waits/retries and immediately before the write; a partial unique index additionally protects confirmed duplicates.
 - Booking POSTs are never automatically retried. An uncertain result reloads authoritative reservations and availability; failed reconciliation disables further booking until a successful refresh. After cancellation, a delayed old POST may create a new booking: this accepted limitation is not a generic idempotency system.
 - Only confirmed bookings consume seats. Cancellation keeps history; rebooking uses a new ID, and old DELETE requests cannot cancel it. Past records do not automatically transition to completed.
-- Memberships and schedule are fixtures. Staff accounts can be provisioned and managed. Trainer-to-catalog links belong to INC-03. The browser uses loopback HTTP sessions.
+- Memberships and training times are fixtures. Administrators manage staff accounts, catalog entries and trainer links. An inactive catalog entry remains readable on existing trainings and bookings. Catalog reactivation is deferred and scheduling writes belong to INC-04. The browser uses loopback HTTP sessions.
 
 ## Original compact handoff context
 

@@ -1,4 +1,8 @@
 """Schedule projections expose counts and only the signed-in client's booking ID."""
+from .db import instant
+
+CATALOG_REFERENCES = {"activities": "activity_id", "trainers": "trainer_id", "rooms": "room_id"}
+
 TRAINING_SELECT = """
 SELECT t.id AS id_treningu, a.name AS aktivita, tr.name AS trener, room.name AS priestor,
        t.starts_at, t.ends_at, t.capacity AS kapacita,
@@ -8,6 +12,12 @@ SELECT t.id AS id_treningu, a.name AS aktivita, tr.name AS trener, room.name AS 
 FROM trainings t JOIN activities a ON a.id=t.activity_id
 JOIN trainers tr ON tr.id=t.trainer_id JOIN rooms room ON room.id=t.room_id
 """
+
+
+def has_future_training(conn, kind, entry_id, now):
+    column = CATALOG_REFERENCES[kind]
+    rows = conn.execute(f"SELECT starts_at FROM trainings WHERE {column}=?", (entry_id,))
+    return any(instant(row["starts_at"]) > now for row in rows)
 
 
 def project(row):

@@ -11,24 +11,28 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import accounts, auth, booking, membership, schedule
+from . import accounts, auth, booking, catalog, membership, schedule
 from .db import Database, DEFAULT_DB, utc_now
 from .errors import BusinessError, error_body
 from .models import (BookingInput, LoginInput, TrainingList, MembershipResponse,
                      ReservationList, MutationResult, RegistrationInput, ProfileUpdate, ProfileView,
                      AccountList, AccountView, AccountRoleUpdate, AccountStatusUpdate,
-                     LoginView, SessionView, StaffRegistration)
+                     LoginView, SessionView, StaffRegistration, CatalogKind, CatalogList,
+                     CatalogEntry, CatalogCreate, CatalogRename, CatalogDeactivate,
+                     TrainerCatalogView, TrainerLinkUpdate)
 
 HERE = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(HERE / "templates"))
 REGISTRATION = "/api/account/registration"
 PROFILE = "/api/account/profile"
 ADMIN = "/api/admin/accounts"
+CATALOG = "/api/admin/catalog"
 CLIENT_ROUTES = ("/memberships/current", "/reservations", PROFILE)
 ROLE_LABELS = {"client": "Klient", "trainer": "Tréner", "reception": "Recepcia", "admin": "Administrátor"}
+AdminID = Annotated[str, PathField(pattern=r"^[0-9]+$")]
 
 
-def account_id_number(value):
+def admin_id_number(value):
     digits = value.lstrip("0")
     if not digits or len(digits) > 16 or int(digits) > 9007199254740991:
         raise BusinessError(422, "validation")
@@ -36,14 +40,15 @@ def account_id_number(value):
 
 
 def create_app(db_path=None, clock=utc_now):
-    application = FastAPI(title="POC-BOOKING-API", version="0.2.0")
+    application = FastAPI(title="POC-BOOKING-API", version="0.3.0")
     application.state.db = Database(db_path or os.environ.get("POC_DB_PATH", DEFAULT_DB), clock)
     db = application.state.db
     application.mount("/static", StaticFiles(directory=str(HERE / "static")), name="static")
 
     def storage_error(request, status, code):
         if request.method == "GET" and request.url.path in (
-            "/login", "/register", "/profile", "/schedule", "/my-reservations", "/staff", "/admin/accounts"
+            "/login", "/register", "/profile", "/schedule", "/my-reservations", "/staff",
+            "/admin/accounts", "/admin/catalog",
         ):
             return HTMLResponse(
                 '<!doctype html><html lang="sk"><meta charset="utf-8"><title>Údaje sú nedostupné</title>'
@@ -56,7 +61,8 @@ def create_app(db_path=None, clock=utc_now):
     @application.middleware("http")
     async def access_boundary(request, call_next):
         path, method = request.url.path, request.method
-        admin = path == ADMIN or path.startswith(ADMIN + "/")
+        catalog_route = path == CATALOG or path.startswith(CATALOG + "/")
+        admin = catalog_route or path == ADMIN or path.startswith(ADMIN + "/")
         client_only = path in CLIENT_ROUTES or path.startswith("/reservations/")
         protected = admin or client_only or path == "/trainings"
         signup = path == REGISTRATION and method == "POST"
@@ -75,6 +81,12 @@ def create_app(db_path=None, clock=utc_now):
                     media_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
                     if media_type != "application/json":
                         raise BusinessError(422, "validation")
+                    if catalog_route:
+                        # FastAPI reports undecodable JSON bytes as 400. Catalog writes use 422.
+                        try:
+                            (await request.body()).decode("utf-8")
+                        except UnicodeDecodeError as exc:
+                            raise BusinessError(422, "validation") from exc
             response = await call_next(request)
         except BusinessError as exc:
             response = JSONResponse(error_body(exc.code), status_code=exc.status)
@@ -94,7 +106,7 @@ def create_app(db_path=None, clock=utc_now):
 
     @application.exception_handler(RequestValidationError)
     async def validation_error(request, exc):
-        if request.url.path in (REGISTRATION, PROFILE) or request.url.path.startswith(ADMIN):
+        if request.url.path in (REGISTRATION, PROFILE) or request.url.path.startswith((ADMIN, CATALOG)):
             # FastAPI's default validation response can include submitted values.
             return JSONResponse(error_body("validation"), status_code=422)
         if request.url.path == "/login":
@@ -168,16 +180,34 @@ def create_app(db_path=None, clock=utc_now):
         return accounts.provision_staff(db, request.state.cookie, data)
 
     @application.put(ADMIN + "/{account_id}/status", response_model=AccountView)
-    def admin_status(account_id: Annotated[str, PathField(pattern=r"^[0-9]+$")],
-                     data: AccountStatusUpdate, request: Request):
-        return accounts.change_account(db, request.state.cookie, account_id_number(account_id),
+    def admin_status(account_id: AdminID, data: AccountStatusUpdate, request: Request):
+        return accounts.change_account(db, request.state.cookie, admin_id_number(account_id),
                                        data.expected_version, status=data.status)
 
     @application.put(ADMIN + "/{account_id}/role", response_model=AccountView)
-    def admin_role(account_id: Annotated[str, PathField(pattern=r"^[0-9]+$")],
-                   data: AccountRoleUpdate, request: Request):
-        return accounts.change_account(db, request.state.cookie, account_id_number(account_id),
+    def admin_role(account_id: AdminID, data: AccountRoleUpdate, request: Request):
+        return accounts.change_account(db, request.state.cookie, admin_id_number(account_id),
                                        data.expected_version, role=data.role)
+
+    @application.get(CATALOG + "/{kind}", response_model=CatalogList)
+    def catalog_list(kind: CatalogKind, request: Request):
+        return {"items": catalog.list_entries(db, request.state.cookie, kind)}
+
+    @application.post(CATALOG + "/{kind}", status_code=201, response_model=CatalogEntry)
+    def catalog_create(kind: CatalogKind, data: CatalogCreate, request: Request):
+        return catalog.create_entry(db, request.state.cookie, kind, data)
+
+    @application.put(CATALOG + "/{kind}/{entry_id}/name", response_model=CatalogEntry)
+    def catalog_rename(kind: CatalogKind, entry_id: AdminID, data: CatalogRename, request: Request):
+        return catalog.rename_entry(db, request.state.cookie, kind, admin_id_number(entry_id), data)
+
+    @application.put(CATALOG + "/{kind}/{entry_id}/status", response_model=CatalogEntry)
+    def catalog_deactivate(kind: CatalogKind, entry_id: AdminID, data: CatalogDeactivate, request: Request):
+        return catalog.deactivate_entry(db, request.state.cookie, kind, admin_id_number(entry_id), data)
+
+    @application.put(CATALOG + "/trainers/{entry_id}/account", response_model=TrainerCatalogView)
+    def catalog_link(entry_id: AdminID, data: TrainerLinkUpdate, request: Request):
+        return catalog.change_trainer_link(db, request.state.cookie, admin_id_number(entry_id), data)
 
     @application.get("/trainings", response_model=TrainingList)
     def get_trainings(request: Request):
@@ -255,6 +285,10 @@ def create_app(db_path=None, clock=utc_now):
     @application.get("/admin/accounts", include_in_schema=False)
     def admin_page(request: Request):
         return page(request, "admin", "admin")
+
+    @application.get("/admin/catalog", include_in_schema=False)
+    def catalog_page(request: Request):
+        return page(request, "catalog", "admin")
 
     return application
 

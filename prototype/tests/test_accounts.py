@@ -5,7 +5,7 @@ import pytest
 from app.auth import verify_password
 from app.main import create_app
 from app.migrate import upgrade
-from conftest import book, code, count
+from conftest import book, code, count, remove_inc03_schema
 from test_acceptance import simultaneous
 
 
@@ -129,6 +129,7 @@ def test_SC_C08_upgrade_preserves_sessions_and_booking_history(demo):
     trainer = demo.client("trener")
     reserved = book(anna).json()["id_rezervacie"]
     with demo.db.transaction(write=True) as conn:
+        remove_inc03_schema(conn)
         conn.execute("ALTER TABLE users DROP COLUMN display_name")
         conn.execute("UPDATE metadata SET value='0.1.1' WHERE key='schema_version'")
     assert upgrade(demo.path) is True

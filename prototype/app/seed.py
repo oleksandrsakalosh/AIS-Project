@@ -23,7 +23,8 @@ def initialize(path=DEFAULT_DB, *, reset=False, now=None):
             if "metadata" not in tables or connection.execute("SELECT value FROM metadata WHERE key='application'").fetchone() != ("POC-BOOKING",):
                 raise ValueError("Refusing to reset a database not owned by this demo")
             connection.execute("PRAGMA foreign_keys=OFF")
-            for table in ("sessions", "reservations", "trainings", "memberships", "users", "activities", "trainers", "rooms", "metadata"):
+            for table in ("sessions", "reservations", "trainings", "memberships", "catalog_creates",
+                          "users", "activities", "trainers", "rooms", "metadata"):
                 connection.execute(f'DROP TABLE IF EXISTS "{table}"')  # fixed internal names only
             connection.commit()
         connection.execute("PRAGMA journal_mode=WAL")
@@ -39,9 +40,9 @@ def initialize(path=DEFAULT_DB, *, reset=False, now=None):
         for user_id, status, start, end in [(1,"active",-7,30),(2,"active",-7,30),(3,"expired",-30,-1),(4,"pending",-1,30)]:
             connection.execute("INSERT INTO memberships(user_id,kind,status,valid_from,valid_until) VALUES (?,'Mesačné členstvo',?,?,?)",
                                (user_id, status, stamp(now+timedelta(days=start)), stamp(now+timedelta(days=end))))
-        connection.executemany("INSERT INTO activities VALUES (?,?)", [(1,"Funkčný tréning"),(2,"Joga a mobilita"),(3,"Kruhový tréning"),(4,"Ranný strečing"),(5,"Zdravý chrbát")])
-        connection.executemany("INSERT INTO trainers VALUES (?,?)", [(1,"Marek Novák"),(2,"Lucia Kováčová")])
-        connection.executemany("INSERT INTO rooms VALUES (?,?)", [(1,"Sála A"),(2,"Štúdio B")])
+        connection.executemany("INSERT INTO activities(id,name) VALUES (?,?)", [(1,"Funkčný tréning"),(2,"Joga a mobilita"),(3,"Kruhový tréning"),(4,"Ranný strečing"),(5,"Zdravý chrbát")])
+        connection.executemany("INSERT INTO trainers(id,name) VALUES (?,?)", [(1,"Marek Novák"),(2,"Lucia Kováčová")])
+        connection.executemany("INSERT INTO rooms(id,name) VALUES (?,?)", [(1,"Sála A"),(2,"Štúdio B")])
         for tid, days, capacity in [(1,1,3),(2,2,1),(3,3,1),(4,-1,8),(5,4,2)]:
             start = now + timedelta(days=days)
             connection.execute("INSERT INTO trainings VALUES (?,?,?,?,?,?,?)", (tid,tid,1 if tid%2 else 2,1 if tid%2 else 2,stamp(start),stamp(start+timedelta(hours=1)),capacity))

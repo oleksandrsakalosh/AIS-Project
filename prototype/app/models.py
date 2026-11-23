@@ -1,5 +1,5 @@
 from typing import Annotated, Literal
-from unicodedata import category
+from unicodedata import category, normalize
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -75,6 +75,61 @@ class AccountView(SessionUser):
 
 class AccountList(BaseModel):
     items: list[AccountView]
+
+
+CatalogKind = Literal["trainers", "activities", "rooms"]
+
+
+def normalize_catalog_name(value):
+    return normalize("NFC", value.strip())
+
+
+class CatalogNameInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: Annotated[str, Field(strict=True)]
+
+    @field_validator("name")
+    @classmethod
+    def valid_name(cls, value):
+        name = normalize_catalog_name(value)
+        if not 1 <= len(name) <= 80 or any(category(char) in ("Cc", "Cs") for char in value):
+            raise ValueError("Enter a name of 1–80 characters without control characters.")
+        return name
+
+
+class CatalogCreate(CatalogNameInput):
+    request_id: Annotated[str, Field(strict=True, pattern=
+        r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")]
+
+
+class CatalogRename(CatalogNameInput, AccountVersionInput):
+    pass
+
+
+class CatalogDeactivate(AccountVersionInput):
+    status: Literal["inactive"]
+
+
+class TrainerLinkUpdate(AccountVersionInput):
+    account_id: AccountNumber | None
+
+
+class CatalogView(BaseModel):
+    id: AccountNumber
+    name: str
+    status: Literal["active", "inactive"]
+    version: AccountNumber
+
+
+class TrainerCatalogView(CatalogView):
+    account_id: AccountNumber | None
+
+
+CatalogEntry = TrainerCatalogView | CatalogView
+
+
+class CatalogList(BaseModel):
+    items: list[CatalogEntry]
 
 
 class ProfileView(BaseModel):

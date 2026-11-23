@@ -21,6 +21,7 @@
         <a href="/profile" {% if page == 'profile' %}aria-current="page"{% endif %}>Môj profil</a>
         {% elif user.role == 'admin' %}
         <a href="/admin/accounts" {% if page == 'admin' %}aria-current="page"{% endif %}>Účty</a>
+        <a href="/admin/catalog" {% if page == 'catalog' %}aria-current="page"{% endif %}>Katalóg</a>
         {% endif %}
       </nav>
       <div class="account"><span class="account-name">{{ user.username }}<small>{{ role_labels[user.role] }}</small></span><button id="logout" class="button button-quiet">Odhlásiť sa</button></div>

@@ -2,6 +2,7 @@
 from .auth import authorize, hash_password
 from .db import instant
 from .errors import BusinessError
+from .schedule import has_future_training
 
 
 def insert_account(conn, username, password_hash, display_name, role):
@@ -84,7 +85,10 @@ def change_account(db, cookie, account_id, expected_version, *, status=None, rol
             if any(instant(training["starts_at"]) > now for training in starts):
                 raise BusinessError(409, "future_reservation")
 
-        # INC-03 adds explicit trainer links and the corresponding future assignment guard.
+        if row["role"] == "trainer" and (disabling or role_changed):
+            trainer = conn.execute("SELECT id FROM trainers WHERE account_id=?", (account_id,)).fetchone()
+            if trainer and has_future_training(conn, "trainers", trainer["id"], db.clock()):
+                raise BusinessError(409, "future_training_assignment")
         conn.execute("UPDATE users SET status=?,role=?,version=version+1 WHERE id=?",
                      (new_status, new_role, account_id))
         if disabling or role_changed:

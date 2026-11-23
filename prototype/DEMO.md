@@ -37,10 +37,16 @@ Otvorte http://127.0.0.1:8000. Heslo predpripravených účtov je `Demo123!`. Re
 3. Deaktivujte a znovu aktivujte tento účet. Staré prihlásenie sa neobnoví. Účet s novým prihlásením opäť získa prístup.
 4. Skúste deaktivovať posledného administrátora a klienta `boris` s budúcou potvrdenou rezerváciou. Obe požiadavky aplikácia odmietne a zobrazí konkrétny dôvod. [Overenie INC-02](reports/validation-inc-02.md)
 
+**INC-03 · Katalóg centra.** Prihláste sa ako administrátor a vyberte **Spravovať katalóg**.
+
+1. V časti **Športové priestory** vytvorte miestnosť **Ukážková sála**, premenujte ju a deaktivujte. Obnovte zoznam a skontrolujte stav **Neaktívna položka**. Rovnaký postup môžete vyskúšať aj pri aktivitách a tréneroch.
+2. V časti **Tréneri** otvorte pri Marekovi Novákovi **Prepojenie účtu** a vyberte `trener`. Na čerstvých ukážkových dátach jeho budúce tréningy zabránia zrušeniu prepojenia aj deaktivácii položky. V časti **Účty** skúste deaktivovať `trener` alebo mu zmeniť rolu na recepciu. Aplikácia obe zmeny odmietne.
+3. V časti **Aktivity** premenujte **Funkčný tréning**. V oddelenom okne sa prihláste ako `boris` a skontrolujte nový názov v **Rozvrhu** aj v **Mojich rezerváciách**. Číslo rezervácie zostane rovnaké. Tlačidlo **Katalóg** sa klientovi nezobrazí. [Overenie INC-03](reports/validation-inc-03.md)
+
 Zachovanie dát možno overiť zastavením a opätovným spustením servera bez resetu. Súbeh posledného miesta overujú automatické testy s nezávislými požiadavkami; rýchle klikanie v jednom prehliadači ho nedokazuje.
 
 ```powershell
-& .\.venv\Scripts\python.exe -m pytest -q
+& .\.venv\Scripts\python.exe -m pytest -q tests
 node --test tests/mutations.test.mjs
 ```
 
